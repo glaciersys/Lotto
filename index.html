@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>หวย 2 ตัว</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d7a5f">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="หวย 2 ตัว">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}body{position:relative}
+body{font-family:'Sarabun',sans-serif;background:#f0f0eb;color:#1a1a1a;display:flex;flex-direction:column}
+
+:root{--h-top:42px;--h-mode:52px;--h-sum:34px;--h-dots:16px}
+.topbar{background:#0d7a5f;color:#fff;padding:0 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;height:var(--h-top)}
+.topbar-title{font-size:14px;font-weight:700}
+.tbtn{background:rgba(255,255,255,0.2);border:none;color:#fff;padding:5px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;min-height:30px}
+.tbtn.red{background:rgba(220,50,50,0.4)}
+.topbar-actions{display:flex;gap:5px}
+
+.modebar{display:flex;background:#0a6650;flex-shrink:0;padding:6px 8px;gap:6px}
+.mtab{flex:1;text-align:center;padding:6px 0;border-radius:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,.65);background:rgba(255,255,255,.08);cursor:pointer;user-select:none}
+.mtab.on{background:#fff;color:#0d7a5f}
+
+.summary{display:flex;background:#fff;border-bottom:1px solid #e0e0e0;flex-shrink:0;height:var(--h-sum)}
+.s-item{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;border-right:1px solid #f0f0ec}
+.s-item:last-child{border-right:none}
+.s-lbl{font-size:9px;color:#aaa}
+.s-val{font-size:12px;font-weight:700}
+.s-val.g{color:#0d7a5f}
+
+/* dot indicator — mobile only */
+.dots{display:none;justify-content:center;gap:6px;padding:4px 0;background:#fff;flex-shrink:0;border-bottom:1px solid #eee}
+.dot{width:7px;height:7px;border-radius:50%;background:#ccc;transition:background .2s}
+.dot.on{background:#0d7a5f}
+
+/* ===== PANELS AREA ===== */
+.panels-area{flex:1;min-height:0;display:flex;overflow:hidden;gap:1px;background:#ddd}
+.panel{flex:1;display:flex;flex-direction:column;background:#fff;overflow:hidden;min-width:0}
+
+@media(max-width:599px){
+  .dots{display:flex}
+  .panels-area{position:relative;overflow:hidden}
+  .panels-inner{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;width:400%;transition:transform .28s ease}
+  .panel{flex:0 0 25%;height:100%;display:flex;flex-direction:column}
+  .panel .rows{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+}
+@media(min-width:600px){
+  .panels-inner{display:contents}
+  .ibar{padding-bottom:16px}
+}
+
+.th{display:flex;background:#0d7a5f;flex-shrink:0}
+.th>span{flex:1;color:#fff;font-size:10px;font-weight:700;padding:3px 1px;text-align:center}
+.th>.th-n{flex:0 0 32px;font-size:8px;white-space:nowrap;overflow:hidden}
+
+.rows{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.row{display:flex;align-items:center;border-bottom:1px solid #f2f2ef}
+.row.has{background:#fffde7}
+.row.hi{outline:2px solid #0d7a5f;outline-offset:-2px;background:#c8f0e0!important;position:relative;z-index:1}
+.row.fl{animation:fl .45s ease}
+@keyframes fl{0%{background:#a0edcc}100%{background:#fffde7}}
+.c{flex:1;text-align:center;font-size:11px;padding:1px;line-height:1.6;overflow:hidden;white-space:nowrap}
+.c.n{flex:0 0 32px;font-weight:900;color:#777;background:#f8f8f5;font-size:10px}
+.c.tv{color:#0d7a5f;font-weight:700}
+.c.bv{color:#7c5cbf;font-weight:700}
+.c.sv{color:#c0392b;font-weight:700;font-size:10px}
+.c.em{color:#ddd;font-size:9px}
+
+/* Input bar */
+.ibar{background:#fff;border-top:2px solid #0d7a5f;padding:5px 8px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));flex-shrink:0}
+.log{display:flex;gap:4px;overflow-x:auto;min-height:20px;align-items:center;padding-bottom:3px;scrollbar-width:none}
+.log::-webkit-scrollbar{display:none}
+.chip{background:#e8f5f1;color:#0d7a5f;border-radius:20px;padding:2px 7px;font-size:10px;white-space:nowrap;display:flex;align-items:center;gap:2px;flex-shrink:0}
+.chip.b{background:#f0ecfa;color:#7c5cbf}
+.chip.neg{background:#fdecea;color:#c0392b}
+.xdel{cursor:pointer;opacity:.5;font-size:11px}
+.log-e{font-size:10px;color:#ccc}
+.irow{display:flex;gap:5px;align-items:flex-end;margin-top:4px}
+.ig{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.il{font-size:10px;font-weight:700;text-align:center}
+.il.n{color:#555}.il.t{color:#0d7a5f}.il.b{color:#7c5cbf}
+.inp{padding:8px 3px;border-radius:8px;border:1.5px solid #e0e0e0;font-size:16px;font-family:inherit;text-align:center;width:100%;background:#f8f8f6;-webkit-appearance:none}
+.inp:focus{outline:none;background:#fff}
+.inp.fn:focus{border-color:#333}
+.inp.ft:focus{border-color:#0d7a5f}
+.inp.fb:focus{border-color:#7c5cbf}
+.badd{background:#0d7a5f;color:#fff;border:none;border-radius:8px;font-size:22px;cursor:pointer;width:44px;height:42px;display:flex;align-items:center;justify-content:center;align-self:flex-end;flex-shrink:0}
+.bdel{background:#fee2e2;color:#c0392b;border:1px solid #fca5a5;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;padding:0 10px;height:42px;display:flex;align-items:center;justify-content:center;align-self:flex-end;flex-shrink:0}
+.badd:active{background:#0a6650}
+
+/* Slip modal */
+.slip-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;align-items:center;justify-content:center;padding:16px}
+.slip-ov.on{display:flex}
+.slip-box{background:#fff;border-radius:16px;padding:20px 18px;width:100%;max-width:360px;max-height:90vh;overflow-y:auto;font-family:sans-serif}
+.slip-head{text-align:center;margin-bottom:10px}
+.slip-head h2{font-size:16px;font-weight:700;margin-bottom:2px}
+.slip-head p{font-size:12px;color:#888}
+.slip-divider{border:none;border-top:1px dashed #bbb;margin:8px 0}
+.slip-sec{margin-bottom:6px;display:flex;flex-direction:column;align-items:center}
+.slip-sec-title{font-size:11px;font-weight:700;color:#333;background:#f5f5f2;padding:3px 6px;border-radius:5px;margin-bottom:4px;display:inline-block;align-self:flex-start}
+.slip-tbl{width:auto;border-collapse:collapse;font-size:14px}
+.slip-tbl th{font-weight:700;color:#aaa;padding:2px 6px;border-bottom:1px solid #eee;font-size:13px}
+.slip-tbl th.tc-n{text-align:left}
+.slip-tbl th.tc-sep{text-align:center;color:#ddd;width:14px;padding:2px 2px}
+.slip-tbl th.tc-t{text-align:right;color:#0d7a5f}
+.slip-tbl th.tc-b{text-align:right;color:#7c5cbf}
+.slip-tbl td{padding:3px 6px;border-bottom:1px solid #f5f5f5}
+.slip-tbl td.tc-n{font-weight:900;font-size:17px;color:#333}
+.slip-tbl td.tc-sep{text-align:center;color:#ccc;font-size:12px;padding:2px 2px}
+.slip-tbl td.tc-t{text-align:right;color:#0d7a5f;font-weight:700;font-family:'Courier New',monospace}
+.slip-tbl td.tc-b{text-align:right;color:#7c5cbf;font-weight:700;font-family:'Courier New',monospace}
+.slip-tbl tr.sub-row td{border-top:1px dotted #ddd;border-bottom:none;padding-top:5px;color:#555;font-weight:700}
+.slip-tbl tr.sub-row td.tc-t{color:#0a7a3a;background:#e6f7ee;padding-left:6px;border-radius:3px}
+.slip-tbl tr.sub-row td.tc-b{color:#5b3da8;background:#ede8fa;padding-left:6px;border-radius:3px}
+.slip-total{font-size:14px;margin-top:4px;display:flex;justify-content:center}
+.slip-total table{width:auto;border-collapse:collapse}
+.slip-total td{padding:5px 8px;border-top:2px solid #0d7a5f;font-weight:900;font-size:16px;background:#fff}
+.slip-total td.tc-sep{padding:5px 2px;background:#fff;color:#1a56db}
+.slip-total td.tc-n{color:#1a56db}
+.slip-total td.tc-t{text-align:right;color:#1a56db;font-family:'Courier New',monospace}
+.slip-total td.tc-b{text-align:right;color:#1a56db;font-family:'Courier New',monospace}
+.slip-total td.tc-sum{text-align:right;font-family:'Courier New',monospace;color:#1a56db;padding-left:12px}
+.slip-total .tc-lbl{display:block;font-size:9px;font-weight:600;opacity:0.6;text-align:right;font-family:sans-serif}
+.slip-btns{display:flex;gap:8px;margin-top:14px}
+.slip-btn{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-family:sans-serif;font-weight:600;cursor:pointer}
+.slip-btn.close{background:#f0f0ec;color:#555}
+.slip-btn.print{background:#0d7a5f;color:#fff}
+@media print{
+  body > *:not(.slip-ov){display:none!important}
+  .slip-ov{display:flex!important;position:static;background:none;padding:0}
+  .slip-box{box-shadow:none;border-radius:0;max-height:none}
+  .slip-btns{display:none}
+}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center}
+.ov.on{display:flex}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:18px 16px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.mt{font-size:16px;font-weight:700}
+.mx{font-size:24px;cursor:pointer;color:#aaa;padding:4px}
+.mf{margin-bottom:10px}
+.mf label{font-size:12px;color:#777;display:block;margin-bottom:4px}
+.mi{padding:11px 12px;border-radius:10px;border:1.5px solid #e0e0e0;font-size:16px;width:100%;font-family:inherit;-webkit-appearance:none}
+.mi:focus{outline:none;border-color:#0d7a5f}
+.m2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mb{background:#0d7a5f;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-family:inherit;font-weight:700;cursor:pointer;width:100%;margin-top:8px;min-height:48px}
+.mb:active{background:#0a6650}
+.sr{display:flex;gap:8px;margin-bottom:12px}
+.st{flex:1;border-radius:10px;padding:10px 6px;text-align:center}
+.sl{font-size:10px;color:#999;margin-bottom:2px}
+.sv2{font-size:15px;font-weight:700}
+.wr{border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.wr.t{background:#e8f5f1}.wr.b{background:#f0ecfa}
+.wn{font-size:22px;font-weight:800;font-family:monospace}
+.wm{font-size:11px;color:#999;margin-top:2px}
+.wp{font-weight:700;font-size:16px}
+.wr.t .wp{color:#0d7a5f}.wr.b .wp{color:#7c5cbf}
+.nw{text-align:center;color:#bbb;padding:16px;font-size:14px}
+
+/* Special Groups Popup */
+.sp-ov{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.5);z-index:9998}
+.sp-ov.on{display:block}
+.sp-panel{display:none;position:fixed;bottom:0;left:0;right:0;width:100vw;max-width:100vw;height:92vh;max-height:92vh;background:#fff;border-radius:16px 16px 0 0;z-index:9999;flex-direction:column;overflow:hidden;box-sizing:border-box}
+.sp-panel.on{display:flex}
+.sp-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#0d7a5f;color:#fff;font-weight:700;font-size:15px;flex-shrink:0}
+.sp-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 4px}
+.sp-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+.sp-list{padding:10px}
+.sp-group{border:1px solid #e0e0e0;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.sp-group-head{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f0faf5;cursor:pointer}
+.sp-group-name{font-weight:700;color:#0d5c3a;font-size:14px}
+.sp-group-count{font-size:11px;color:#888}
+.sp-group-del{background:none;border:none;color:#c0392b;font-size:16px;cursor:pointer;padding:2px 6px}
+.sp-nums-wrap{padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid #eee}
+.sp-num-chip{background:#e8f5f1;border:1px solid #0d7a5f;border-radius:6px;padding:3px 8px;font-size:13px;color:#0d5c3a;font-weight:600;cursor:pointer}
+.sp-num-chip:active{background:#0d7a5f;color:#fff}
+.sp-price-row{display:flex;gap:4px;padding:8px 10px;border-top:1px solid #eee;align-items:center;background:#fafafa;box-sizing:border-box;width:100%}
+.sp-price-lbl{font-size:12px;color:#555;min-width:28px}
+.sp-price-inp{flex:1;min-width:0;border:1px solid #ccc;border-radius:6px;padding:5px 6px;font-size:14px;text-align:right;box-sizing:border-box}
+.sp-apply-btn{background:#0d7a5f;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.sp-add-section{padding:10px 12px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));border-top:2px dashed #ccc;background:#fafff8;flex-shrink:0}
+.sp-add-title{font-size:12px;color:#0d5c3a;font-weight:700;margin-bottom:6px}
+.sp-inp{width:100%;border:1px solid #ccc;border-radius:8px;padding:7px 10px;font-size:13px;margin-bottom:6px;font-family:inherit;box-sizing:border-box}
+.sp-ta{height:60px;resize:none}
+.sp-save-btn{width:100%;background:#0a6650;color:#fff;border:none;border-radius:8px;padding:8px;font-size:14px;font-weight:700;cursor:pointer}
+.sp-perm-section{padding:10px 12px;border-top:2px dashed #b0d9cc;background:#f0faf5;flex-shrink:0}
+.sp-inp-active{border-color:#0d7a5f!important;box-shadow:0 0 0 2px rgba(13,122,95,.25)!important}
+.sp-k-del{background:#fee2e2;border:1px solid #fca5a5;color:#c0392b;font-size:12px;font-weight:700;border-radius:6px;padding:5px 8px;cursor:pointer;white-space:nowrap}
+.sp-k-del:active{background:#c0392b;color:#fff}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title" id="appTitle">🎫 หวย 2 ตัว</div>
+  <div class="topbar-actions">
+    <button class="tbtn" onclick="doPrint()">🖨️ลาว</button>
+    <button class="tbtn" onclick="doPrintThai()">🇹🇭 ไทย</button>
+    <button class="tbtn" id="btnSpecial" onclick="showSpecial()">✨ กลุ่ม</button>
+    <button class="tbtn" onclick="showMod()">🏆 ตรวจผล</button>
+    <button class="tbtn red" onclick="clearAll()">🗑️</button>
+  </div>
+</div>
+
+<div class="modebar">
+  <div class="mtab on" id="tab2" onclick="switchMode('2')">2 ตัว</div>
+  <div class="mtab" id="tab3" onclick="switchMode('3')">3 ตัว</div>
+</div>
+
+<div class="summary">
+  <div class="s-item"><div class="s-lbl" id="lblTop">ยอดบน</div><div class="s-val g" id="st">0</div></div>
+  <div class="s-item"><div class="s-lbl" id="lblBot">ยอดล่าง</div><div class="s-val g" id="sb">0</div></div>
+  <div class="s-item"><div class="s-lbl">รวม</div><div class="s-val" id="ss">0</div></div>
+  <div class="s-item"><div class="s-lbl">เลข</div><div class="s-val" id="sc">0</div></div>
+</div>
+
+<div class="dots" id="dots">
+  <div class="dot on" id="d0"></div><div class="dot" id="d1"></div>
+  <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
+</div>
+
+<div class="panels-area" id="pa">
+  <div class="panels-inner" id="pi">
+    <div class="panel"><div class="th"><span class="th-n" id="thn0">00-24</span><span class="th-top">บน</span><span class="th-bot">ล่าง</span><span>รวม</span></div><div class="rows" id="r0"></div></div>
+    <div class="panel"><div class="th"><span class="th-n" id="thn1">25-49</span><span class="th-top">บน</span><span class="th-bot">ล่าง</span><span>รวม</span></div><div class="rows" id="r1"></div></div>
+    <div class="panel"><div class="th"><span class="th-n" id="thn2">50-74</span><span class="th-top">บน</span><span class="th-bot">ล่าง</span><span>รวม</span></div><div class="rows" id="r2"></div></div>
+    <div class="panel"><div class="th"><span class="th-n" id="thn3">75-99</span><span class="th-top">บน</span><span class="th-bot">ล่าง</span><span>รวม</span></div><div class="rows" id="r3"></div></div>
+  </div>
+</div>
+
+<div class="ibar">
+  <div class="log" id="log"><span class="log-e">รายการล่าสุด...</span></div>
+  <div class="irow">
+    <div class="ig" style="flex:1.1"><div class="il n">เลข</div><input class="inp fn" id="fn" type="text" inputmode="numeric" maxlength="2" placeholder="00"></div>
+    <div class="ig"><div class="il t" id="lblInpTop">บน (฿)</div><input class="inp ft" id="ft" type="text" inputmode="decimal" placeholder="0"></div>
+    <div class="ig"><div class="il b" id="lblInpBot">ล่าง (฿)</div><input class="inp fb" id="fb" type="text" inputmode="decimal" placeholder="0"></div>
+    <button class="bdel" id="bdel" onclick="delActiveField()">DEL</button>
+    <button class="badd" onclick="doAdd()">+</button>
+  </div>
+</div>
+
+<div class="ov" id="ov" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="mh"><div class="mt">🏆 ตรวจผลรางวัล</div><div style="display:flex;gap:8px;align-items:center"><button onclick="clearCheck()" style="background:rgba(180,50,50,.15);color:#c0392b;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-family:inherit;font-weight:700;cursor:pointer">🗑️ ล้าง</button><span class="mx" onclick="closeMod()">✕</span></div></div>
+    <div class="m2">
+      <div class="mf"><label>เลข 3 ตัว</label><input class="mi" id="res3" type="text" inputmode="numeric" maxlength="3" placeholder="123" oninput="updDerived()"></div>
+      <div class="mf"><label>เลขล่าง (2 ตัว)</label><input class="mi" id="res2b" type="text" inputmode="numeric" maxlength="2" placeholder="72"></div>
+    </div>
+    <div id="derived" style="font-size:11px;color:#888;margin:-6px 0 12px;line-height:1.7;min-height:14px"></div>
+    <div class="m2">
+      <div class="mf"><label>อัตราจ่ายเต็ง (x)</label><input class="mi" id="rrt3" type="number" inputmode="numeric" value="900"></div>
+      <div class="mf"><label>อัตราจ่ายโต๊ด (x)</label><input class="mi" id="rrb3" type="number" inputmode="numeric" value="150"></div>
+      <div class="mf"><label>อัตราจ่ายบน (x)</label><input class="mi" id="rrt2" type="number" inputmode="numeric" value="70"></div>
+      <div class="mf"><label>อัตราจ่ายล่าง (x)</label><input class="mi" id="rrb2" type="number" inputmode="numeric" value="70"></div>
+    </div>
+    <button class="mb" onclick="doCheck()">✅ ตรวจโพย</button>
+    <div id="ro" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const LBL = {
+  '2': {title:'หวย 2 ตัว', top:'บน', bot:'ล่าง', topFull:'2 ตัวบน', botFull:'2 ตัวล่าง', digits:2, perPanel:25, rrt:70, rrb:70, slipTitle:'ใบโพยหวย 2 ตัว', phT:'45', phB:'72'},
+  '3': {title:'หวย 3 ตัว', top:'เต็ง', bot:'โต๊ด', topFull:'3 ตัวเต็ง', botFull:'3 ตัวโต๊ด', digits:3, perPanel:250, rrt:900, rrb:150, slipTitle:'ใบโพยหวย 3 ตัว', phT:'123', phB:'456'}
+};
+
+let MODE = localStorage.getItem('h_mode') || '2';
+let D = {}, E = {};
+const cfg = () => LBL[MODE];
+
+function loadData(){
+  D = JSON.parse(localStorage.getItem('h'+MODE+'d')||'{}');
+  E = JSON.parse(localStorage.getItem('h'+MODE+'e')||'[]');
+}
+const sv = () => { localStorage.setItem('h'+MODE+'d',JSON.stringify(D)); localStorage.setItem('h'+MODE+'e',JSON.stringify(E)); };
+
+const isMob = () => window.innerWidth < 600;
+let cur = 0;
+
+function goPanel(idx) {
+  idx = Math.max(0,Math.min(3,idx));
+  cur = idx;
+  if(!isMob()) return;
+  $('pi').style.transform = `translateX(-${idx * 25}%)`;
+  [0,1,2,3].forEach(i=>$('d'+i).classList.toggle('on', i===idx));
+}
+
+let tx0 = 0;
+$('pa').addEventListener('touchstart', e=>{ tx0=e.touches[0].clientX; },{passive:true});
+$('pa').addEventListener('touchend', e=>{
+  const dx = e.changedTouches[0].clientX - tx0;
+  if(Math.abs(dx)>40) goPanel(cur+(dx<0?1:-1));
+},{passive:true});
+
+const panelOf = n => Math.floor(parseInt(n)/cfg().perPanel);
+const fmt = v => !v?'-':v>=1000?(v/1000).toFixed(v%1000?1:0)+'k':v;
+
+function rHTML(n,d){
+  const s=(d.top||0)+(d.bot||0);
+  return `<span class="c n">${n}</span><span class="c ${d.top>0?'tv':'em'}">${fmt(d.top)}</span><span class="c ${d.bot>0?'bv':'em'}">${fmt(d.bot)}</span><span class="c ${s>0?'sv':'em'}">${fmt(s)}</span>`;
+}
+
+function rangeLabel(p){
+  const c=cfg();
+  const start=p*c.perPanel, end=start+c.perPanel-1;
+  return String(start).padStart(c.digits,'0')+'-'+String(end).padStart(c.digits,'0');
+}
+
+function build(){
+  const c=cfg();
+  for(let p=0;p<4;p++){
+    $('thn'+p).textContent = rangeLabel(p);
+    const cont=$('r'+p); cont.innerHTML='';
+    const start=p*c.perPanel, end=start+c.perPanel-1;
+    for(let i=start;i<=end;i++){
+      const n=String(i).padStart(c.digits,'0');
+      const d=D[n]||{top:0,bot:0};
+      const div=document.createElement('div');
+      div.className='row'+((d.top||0)+(d.bot||0)>0?' has':'');
+      div.id='row'+n; div.innerHTML=rHTML(n,d);
+      cont.appendChild(div);
+    }
+  }
+  calcSum();
+}
+
+function updRow(n){
+  const d=D[n]||{top:0,bot:0};
+  const s=(d.top||0)+(d.bot||0);
+  const row=$('row'+n); if(!row)return;
+  row.className='row'+(s>0?' has':'');
+  row.innerHTML=rHTML(n,d);
+  row.classList.add('fl'); setTimeout(()=>row.classList.remove('fl'),500);
+  scrollTo2(n);
+}
+
+function scrollTo2(n){
+  const p=panelOf(n);
+  if(isMob() && cur!==p){
+    goPanel(p);
+    setTimeout(()=>highlightRow(n), 320);
+  } else {
+    highlightRow(n);
+  }
+}
+
+function highlightRow(n){
+  document.querySelectorAll('.row.hi').forEach(r=>r.classList.remove('hi'));
+  const row=$('row'+n); if(!row)return;
+  row.classList.add('hi');
+  const container=row.closest('.rows');
+  if(!container) return;
+  // Find index of this row among siblings to calculate exact position
+  const siblings=Array.from(container.children);
+  const idx=siblings.indexOf(row);
+  if(idx<0) return;
+  const rowH=container.scrollHeight/siblings.length;
+  const target=(idx*rowH)-(container.clientHeight/2)+(rowH/2);
+  container.scrollTop=Math.max(0,target);
+}
+
+function calcSum(){
+  let tt=0,tb=0,cnt=0;
+  for(const n in D){const d=D[n];tt+=d.top||0;tb+=d.bot||0;if((d.top||0)+(d.bot||0)>0)cnt++;}
+  $('st').textContent=tt.toLocaleString();
+  $('sb').textContent=tb.toLocaleString();
+  $('ss').textContent=(tt+tb).toLocaleString();
+  $('sc').textContent=cnt;
+}
+
+function delActiveField(){
+  const el=$(activeInpId);
+  if(el){ el.value=''; el.focus(); }
+}
+
+function doAdd(){
+  const c=cfg();
+  const raw=$('fn').value.trim();
+  const n=raw.padStart(c.digits,'0');
+  const ftRaw=$('ft').value.trim();
+  const fbRaw=$('fb').value.trim();
+  const taSub=parseFloat(ftRaw)||0; // signed value
+  const baSub=parseFloat(fbRaw)||0;
+  const maxVal=Math.pow(10,c.digits)-1;
+  if(!raw){alert('กรุณากรอกหมายเลข');return;}
+  if(!new RegExp('^\\d{1,'+c.digits+'}$').test(raw)||parseInt(raw)>maxVal){alert('หมายเลขต้องเป็น '+'0'.repeat(c.digits)+'-'+maxVal);return;}
+  if(!taSub&&!baSub){alert('กรุณากรอกยอด'+c.top+'หรือ'+c.bot+'อย่างน้อย 1 ช่อง');return;}
+  if(!D[n])D[n]={top:0,bot:0};
+  if(taSub!==0){
+    if(taSub<0){
+      // subtract mode
+      const deduct=Math.min(Math.abs(taSub), D[n].top||0);
+      if(deduct>0){D[n].top=Math.max(0,(D[n].top||0)-deduct);E.push({n,t:'top',a:-deduct});}
+    } else {
+      D[n].top=(D[n].top||0)+taSub;
+      E.push({n,t:'top',a:taSub});
+    }
+  }
+  if(baSub!==0){
+    if(baSub<0){
+      const deduct=Math.min(Math.abs(baSub), D[n].bot||0);
+      if(deduct>0){D[n].bot=Math.max(0,(D[n].bot||0)-deduct);E.push({n,t:'bot',a:-deduct});}
+    } else {
+      D[n].bot=(D[n].bot||0)+baSub;
+      E.push({n,t:'bot',a:baSub});
+    }
+  }
+  updRow(n); sv(); calcSum(); renderLog();
+  $('fn').value='';$('ft').value='';$('fb').value='';
+  document.querySelectorAll('.row.hi').forEach(r=>r.classList.remove('hi'));
+  $('fn').focus();
+}
+
+function renderLog(){
+  const c=cfg();
+  const el=$('log');
+  if(!E.length){el.innerHTML='<span class="log-e">รายการล่าสุด...</span>';return;}
+  el.innerHTML=[...E].reverse().slice(0,30).map((e,i)=>{
+    const neg=e.a<0;
+    const cls=neg?'chip neg':`chip ${e.t==='bot'?'b':''}`;
+    const sign=neg?'-':'';
+    return `<div class="${cls}">${e.n} ${e.t==='top'?c.top:c.bot} ${sign}฿${Math.abs(e.a)}<span class="xdel" onclick="delE(${E.length-1-i})">✕</span></div>`;
+  }).join('');
+}
+
+function delE(idx){
+  const e=E[idx];if(!e||!D[e.n])return;
+  const k=e.t==='top'?'top':'bot';
+  // undo the recorded amount (positive = was added, negative = was subtracted)
+  D[e.n][k]=Math.max(0,(D[e.n][k]||0)-e.a);
+  E.splice(idx,1);sv();updRow(e.n);calcSum();renderLog();
+}
+
+function clearAll(){
+  if(!confirm('ล้างข้อมูลทั้งหมด?'))return;
+  D={};E=[];sv();build();renderLog();
+}
+
+// Resize layout to fit visual viewport (handles keyboard on mobile AND taskbar on desktop)
+(function(){
+  function applyHeight(){
+    const vv = window.visualViewport;
+    const h = vv ? vv.height : window.innerHeight;
+    const w = vv ? vv.width : window.innerWidth;
+    // On desktop: if the browser window bottom overlaps Windows taskbar,
+    // innerHeight may exceed the visible area. Use outerHeight vs screen.availHeight
+    // to detect how many pixels are hidden behind the taskbar.
+    let safeH = h;
+    if(w >= 600){
+      const winBottom = window.screenY + window.outerHeight;
+      const availBottom = window.screen.availTop + window.screen.availHeight;
+      const overlap = winBottom - availBottom;
+      if(overlap > 0) safeH = h - overlap;
+    }
+    document.documentElement.style.height = safeH + 'px';
+    document.body.style.height = safeH + 'px';
+    document.documentElement.style.width = w + 'px';
+    if(vv) window.scrollTo(0,0);
+  }
+  applyHeight();
+  window.addEventListener('resize', applyHeight);
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', applyHeight);
+    window.visualViewport.addEventListener('scroll', applyHeight);
+  }
+})();
+// Track which input field is focused
+let activeInpId='fn';
+['fn','ft','fb'].forEach(id=>{
+  const el=$(id);
+  if(el) el.addEventListener('focus',()=>{ activeInpId=id; });
+});
+
+$('fn').onkeydown=e=>{if(e.key==='Enter')$('ft').focus();};
+$('ft').onkeydown=e=>{if(e.key==='Enter')$('fb').focus();};
+$('fb').onkeydown=e=>{if(e.key==='Enter')doAdd();};
+$('res3').onkeydown=e=>{if(e.key==='Enter')$('res2b').focus();};
+$('res2b').onkeydown=e=>{if(e.key==='Enter')doCheck();};
+$('fn').oninput=e=>{
+  const c=cfg();
+  const raw=e.target.value.trim();
+  if(raw.length>=1&&new RegExp('^\\d{1,'+c.digits+'}$').test(raw)&&parseInt(raw)<=Math.pow(10,c.digits)-1) scrollTo2(raw.padStart(c.digits,'0'));
+  if(raw.length===c.digits)$('ft').focus();
+};
+
+function showMod(){$('ov').classList.add('on');setTimeout(()=>$('res3').focus(),50);}
+function closeMod(){$('ov').classList.remove('on');$('ro').innerHTML='';$('derived').innerHTML='';}
+function bgClose(e){if(e.target===$('ov'))closeMod();}
+function clearCheck(){
+  ['res3','res2b'].forEach(id=>{$( id).value='';});
+  $('derived').innerHTML='';$('ro').innerHTML='';
+  $('res3').focus();
+}
+// DEL key clears the focused field (main input bar + check modal)
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    if($('sp-ov').classList.contains('on')){closeSpecial();return;}
+    if($('slip-ov').classList.contains('on')){closeSlip();return;}
+    if($('ov').classList.contains('on')){closeMod();return;}
+    return;
+  }
+  if(e.key!=='Delete')return;
+  const active=document.activeElement;
+  if(!active)return;
+  const mainIds=['fn','ft','fb'];
+  const checkIds=['res3','res2b','rrt3','rrb3','rrt2','rrb2'];
+  if(mainIds.includes(active.id)){
+    e.preventDefault();active.value='';
+  } else if(checkIds.includes(active.id)&&$('ov').classList.contains('on')){
+    e.preventDefault();active.value='';
+    if(active.id==='res3'){$('derived').innerHTML='';}
+  }
+},true);
+
+function isPerm(a,b){ return a.length===b.length && [...a].sort().join('')===[...b].sort().join(''); }
+
+function permsOf(s){
+  const out=new Set();
+  (function go(arr,acc){
+    if(!arr.length){out.add(acc);return;}
+    for(let i=0;i<arr.length;i++) go(arr.slice(0,i).concat(arr.slice(i+1)), acc+arr[i]);
+  })([...s],'');
+  return [...out];
+}
+
+function updDerived(){
+  const v=$('res3').value.trim();
+  if(v.length<3){$('derived').innerHTML='';return;}
+  const r3=v.padStart(3,'0');
+  const top2=r3.slice(-2);
+  const tod=permsOf(r3).sort().join(' , ');
+  $('derived').innerHTML=`บน 2 ตัว = <b style="color:#0d7a5f">${top2}</b> &nbsp;·&nbsp; โต๊ด = <b style="color:#7c5cbf">${tod}</b>`;
+}
+
+function doCheck(){
+  const r3v=$('res3').value.trim(), r2bv=$('res2b').value.trim();
+  if(!r3v&&!r2bv){alert('กรุณากรอกผลรางวัล');return;}
+  const r3=r3v?r3v.padStart(3,'0'):'';
+  const r2b=r2bv?r2bv.padStart(2,'0'):'';
+  const r2t=r3?r3.slice(-2):'';
+  const rrt3=parseFloat($('rrt3').value)||LBL['3'].rrt;
+  const rrb3=parseFloat($('rrb3').value)||LBL['3'].rrb;
+  const rrt2=parseFloat($('rrt2').value)||LBL['2'].rrt;
+  const rrb2=parseFloat($('rrb2').value)||LBL['2'].rrb;
+
+  const D3=getData('3'), D2=getData('2');
+  let pay=0,rec=0,html='';
+  for(const n in D3){const d=D3[n];rec+=(d.top||0)+(d.bot||0);}
+  for(const n in D2){const d=D2[n];rec+=(d.top||0)+(d.bot||0);}
+
+  if(r3&&D3[r3]&&D3[r3].top>0){
+    const p=D3[r3].top*rrt3;pay+=p;
+    html+=`<div class="wr t"><div><div class="wn">${r3}</div><div class="wm">3 ตัวเต็ง · แทง ฿${D3[r3].top.toLocaleString()}</div></div><div class="wp">+฿${p.toLocaleString()}</div></div>`;
+  }
+  if(r3){
+    const hits=Object.keys(D3).filter(n=>(D3[n].bot||0)>0&&isPerm(n,r3)).sort();
+    hits.forEach(n=>{
+      const p=D3[n].bot*rrb3;pay+=p;
+      html+=`<div class="wr b"><div><div class="wn">${n}</div><div class="wm">3 ตัวโต๊ด · แทง ฿${D3[n].bot.toLocaleString()}</div></div><div class="wp">+฿${p.toLocaleString()}</div></div>`;
+    });
+  }
+  if(r2t&&D2[r2t]&&D2[r2t].top>0){
+    const p=D2[r2t].top*rrt2;pay+=p;
+    html+=`<div class="wr t"><div><div class="wn">${r2t}</div><div class="wm">2 ตัวบน · แทง ฿${D2[r2t].top.toLocaleString()}</div></div><div class="wp">+฿${p.toLocaleString()}</div></div>`;
+  }
+  if(r2b&&D2[r2b]&&D2[r2b].bot>0){
+    const p=D2[r2b].bot*rrb2;pay+=p;
+    html+=`<div class="wr b"><div><div class="wn">${r2b}</div><div class="wm">2 ตัวล่าง · แทง ฿${D2[r2b].bot.toLocaleString()}</div></div><div class="wp">+฿${p.toLocaleString()}</div></div>`;
+  }
+
+  const profit=rec-pay;
+  $('ro').innerHTML=`<div class="sr">
+    <div class="st" style="background:#f8f8f6"><div class="sl">รับรวม</div><div class="sv2">฿${rec.toLocaleString()}</div></div>
+    <div class="st" style="background:#fff0f0"><div class="sl">จ่าย</div><div class="sv2" style="color:#c0392b">฿${pay.toLocaleString()}</div></div>
+    <div class="st" style="background:${profit>=0?'#e8f5f1':'#fff0f0'}"><div class="sl">กำไร</div><div class="sv2" style="color:${profit>=0?'#0d7a5f':'#c0392b'}">฿${profit.toLocaleString()}</div></div>
+  </div>${html||'<div class="nw">ไม่มีเลขถูกรางวัล</div>'}`;
+}
+
+function getData(m){
+  // Always flush current D to localStorage first so data is consistent
+  sv();
+  return JSON.parse(localStorage.getItem('h'+m+'d')||'{}');
+}
+
+function doPrint(){
+  let body='', grandTop=0, grandBot=0, totalCount=0;
+  const grandByMode={};
+  ['3','2'].forEach(m=>{
+    const c=LBL[m];
+    const data=getData(m);
+    const keys=Object.keys(data).filter(n=>(data[n].top||0)+(data[n].bot||0)>0).sort();
+    if(!keys.length) return;
+    let tt=0,tb=0;
+    const rows=keys.map(n=>{
+      const d=data[n],t=d.top||0,b=d.bot||0; tt+=t; tb+=b;
+      return `<tr><td class="tc-n">${n}</td><td class="tc-sep">=</td><td class="tc-t">${t>0?t.toLocaleString():'-'}</td><td class="tc-sep">x</td><td class="tc-b">${b>0?b.toLocaleString():'-'}</td></tr>`;
+    }).join('');
+    grandByMode[m]=tt+tb;
+    grandTop+=tt; grandBot+=tb; totalCount+=keys.length;
+    body+=`<div class="slip-sec">
+      <div class="slip-sec-title">เลข ${c.digits} ตัว</div>
+      <table class="slip-tbl">
+        <thead><tr><th class="tc-n">เลข</th><th class="tc-sep">=</th><th class="tc-t">${c.top}</th><th class="tc-sep">x</th><th class="tc-b">${c.bot}</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="sub-row"><td class="tc-n">รวม</td><td class="tc-sep"></td><td class="tc-t">${tt>0?tt.toLocaleString():'-'}</td><td class="tc-sep">x</td><td class="tc-b">${tb>0?tb.toLocaleString():'-'}</td></tr></tfoot>
+      </table>
+    </div>`;
+  });
+  if(!totalCount){alert('ยังไม่มีข้อมูล');return;}
+  const grand3=grandByMode['3']||0, grand2=grandByMode['2']||0, grand=grand3+grand2;
+  const g3str=grand3>0?grand3.toLocaleString():'-';
+  const g2str=grand2>0?grand2.toLocaleString():'-';
+  $('slip-title').textContent='🎫 Slip ลาว';
+  $('slip-date').textContent='วันที่ '+new Date().toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});
+  $('slip-body').innerHTML=body;
+  $('slip-total').innerHTML=`<table>
+    <tr>
+      <td class="tc-n">รวม</td>
+      <td class="tc-sep"></td>
+      <td class="tc-t"><span class="tc-lbl">3ตัว</span>${g3str}</td>
+      <td class="tc-sep">+</td>
+      <td class="tc-b"><span class="tc-lbl">2ตัว</span>${g2str}</td>
+      <td class="tc-sep">=</td>
+      <td class="tc-sum">${grand.toLocaleString()}</td>
+    </tr></table>`;
+  $('slip-ov').classList.add('on');
+}
+function closeSlip(){$('slip-ov').classList.remove('on');}
+
+function doPrintThai(){
+  const THAI_MULT_2 = 12; // 2-digit multiplier for Thai lottery
+  let body='', grandTop=0, grandBot=0, totalCount=0;
+  const grandByMode={};
+  ['3','2'].forEach(m=>{
+    const c=LBL[m];
+    const data=getData(m);
+    const keys=Object.keys(data).filter(n=>(data[n].top||0)+(data[n].bot||0)>0).sort();
+    if(!keys.length) return;
+    let tt=0,tb=0;
+    const rows=keys.map(n=>{
+      const d=data[n];
+      const t=d.top||0, b=d.bot||0;
+      tt+=t; tb+=b;
+      return `<tr><td class="tc-n">${n}</td><td class="tc-sep">=</td><td class="tc-t">${t>0?t.toLocaleString():'-'}</td><td class="tc-sep">x</td><td class="tc-b">${b>0?b.toLocaleString():'-'}</td></tr>`;
+    }).join('');
+    const dispTT = m==='2' ? tt*THAI_MULT_2 : tt;
+    const dispTB = m==='2' ? tb*THAI_MULT_2 : tb;
+    grandByMode[m]=dispTT+dispTB;
+    grandTop+=dispTT; grandBot+=dispTB; totalCount+=keys.length;
+    body+=`<div class="slip-sec">
+      <div class="slip-sec-title">เลข ${c.digits} ตัว</div>
+      <table class="slip-tbl">
+        <thead><tr><th class="tc-n">เลข</th><th class="tc-sep">=</th><th class="tc-t">${c.top}</th><th class="tc-sep">x</th><th class="tc-b">${c.bot}</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="sub-row"><td class="tc-n">รวม</td><td class="tc-sep"></td><td class="tc-t">${dispTT>0?dispTT.toLocaleString():'-'}</td><td class="tc-sep">x</td><td class="tc-b">${dispTB>0?dispTB.toLocaleString():'-'}</td></tr></tfoot>
+      </table>
+    </div>`;
+  });
+  if(!totalCount){alert('ยังไม่มีข้อมูล');return;}
+  const grand3=grandByMode['3']||0, grand2=grandByMode['2']||0, grand=grand3+grand2;
+  const g3str=grand3>0?grand3.toLocaleString():'-';
+  const g2str=grand2>0?grand2.toLocaleString():'-';
+  $('slip-title').textContent='🇹🇭 Slip ไทย';
+  $('slip-date').textContent='วันที่ '+new Date().toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});
+  $('slip-body').innerHTML=body;
+  $('slip-total').innerHTML=`<table>
+    <tr>
+      <td class="tc-n">รวม</td>
+      <td class="tc-sep"></td>
+      <td class="tc-t"><span class="tc-lbl">3ตัว</span>${g3str}</td>
+      <td class="tc-sep">+</td>
+      <td class="tc-b"><span class="tc-lbl">2ตัว</span>${g2str}</td>
+      <td class="tc-sep">=</td>
+      <td class="tc-sum">${grand.toLocaleString()}</td>
+    </tr></table>`;
+  $('slip-ov').classList.add('on');
+}
+
+function applyLabels(){
+  const c=cfg();
+  $('appTitle').textContent='🎫 '+c.title;
+  document.title=c.title;
+  $('lblTop').textContent='ยอด'+c.top;
+  $('lblBot').textContent='ยอด'+c.bot;
+  document.querySelectorAll('.th-top').forEach(e=>e.textContent=c.top);
+  document.querySelectorAll('.th-bot').forEach(e=>e.textContent=c.bot);
+  $('lblInpTop').textContent=c.top+' (฿)';
+  $('lblInpBot').textContent=c.bot+' (฿)';
+  $('fn').setAttribute('maxlength',c.digits);
+  $('fn').placeholder='0'.repeat(c.digits);
+}
+
+function switchMode(m){
+  if(m===MODE)return;
+  MODE=m;
+  localStorage.setItem('h_mode',MODE);
+  $('tab2').classList.toggle('on',m==='2');
+  $('tab3').classList.toggle('on',m==='3');
+  $('btnSpecial').style.display=m==='2'?'':'none';
+  loadData();
+  applyLabels();
+  build();
+  renderLog();
+  goPanel(0);
+  closeMod();
+  setTimeout(()=>$('fn').focus(),50);
+}
+
+loadData();
+applyLabels();
+build(); renderLog();
+$('tab2').classList.toggle('on',MODE==='2');
+$('tab3').classList.toggle('on',MODE==='3');
+setTimeout(()=>$('fn').focus(),50);
+// Init special button visibility
+if($('btnSpecial')) $('btnSpecial').style.display=MODE==='2'?'':'none';
+
+// ===== Special Groups =====
+const DEFAULT_GROUPS = [
+  {id:'g_double', name:'เลขเบิ้ล', nums:['00','11','22','33','44','55','66','77','88','99']},
+  {id:'g_near1',  name:'เลขติด 1', nums:['01','10','12','21','23','32','34','43','45','54','56','65','67','76','78','87','89','98']},
+  {id:'g_near2',  name:'เลขติด 2', nums:['02','20','13','31','24','42','35','53','46','64','57','75','68','86','79','97']},
+  {id:'g_high',   name:'เลขสูง (50-99)', nums:Array.from({length:50},(_,i)=>String(50+i).padStart(2,'0'))},
+  {id:'g_low',    name:'เลขต่ำ (00-49)', nums:Array.from({length:50},(_,i)=>String(i).padStart(2,'0'))},
+  {id:'g_even',   name:'เลขท้ายคู่', nums:Array.from({length:100},(_,i)=>String(i).padStart(2,'0')).filter(n=>parseInt(n[1])%2===0)},
+  {id:'g_odd',    name:'เลขท้ายคี่', nums:Array.from({length:100},(_,i)=>String(i).padStart(2,'0')).filter(n=>parseInt(n[1])%2===1)},
+];
+
+function getSpecialGroups(){
+  const saved = JSON.parse(localStorage.getItem('h_special_groups')||'null');
+  if(!saved) return DEFAULT_GROUPS.map(g=>({...g}));
+  return saved;
+}
+function saveSpecialGroups(groups){ localStorage.setItem('h_special_groups', JSON.stringify(groups)); }
+
+function showSpecial(){
+  if(MODE!=='2'){alert('กลุ่มเลขพิเศษใช้ได้เฉพาะหวย 2 ตัว');return;}
+  renderSpecialList();
+  $('sp-ov').classList.add('on');
+  $('sp-panel').classList.add('on');
+  spFocusField(null);
+}
+
+let spActiveField=null;
+function spFocusField(id){
+  spActiveField=id;
+  document.querySelectorAll('.sp-inp-focusable').forEach(el=>{
+    el.classList.toggle('sp-inp-active', el.id===id);
+  });
+}
+function spKey(v){
+  if(!spActiveField) return;
+  const el=$(spActiveField);
+  if(!el) return;
+  if(v==='DEL'){ el.value=''; }
+  else { if(el.dataset.maxlen && el.value.length>=parseInt(el.dataset.maxlen)) return; el.value+=v; }
+  // trigger genPerm if it's the perm input and has 3 digits
+  if(spActiveField==='sp-perm-num' && el.value.length===3) genPerm();
+}
+function closeSpecial(){
+  $('sp-ov').classList.remove('on');
+  $('sp-panel').classList.remove('on');
+}
+
+function renderSpecialList(){
+  const groups = getSpecialGroups();
+  const list = $('sp-list');
+  list.innerHTML = groups.map((g,gi)=>`
+    <div class="sp-group">
+      <div class="sp-group-head" onclick="toggleGroup(${gi})">
+        <span class="sp-group-name">${g.name}</span>
+        <span>
+          <span class="sp-group-count">${g.nums.length} เลข</span>
+          <button class="sp-group-del" onclick="event.stopPropagation();deleteGroup(${gi})">🗑</button>
+        </span>
+      </div>
+      <div class="sp-nums-wrap" id="sg-nums-${gi}" style="display:none">
+        ${g.nums.map(n=>`<span class="sp-num-chip" onclick="chipClick('${n}',${gi})">${n}</span>`).join('')}
+        <div class="sp-price-row" style="width:100%;margin-top:4px">
+          <span class="sp-price-lbl">บน</span><input class="sp-price-inp" id="sg-top-${gi}" type="text" inputmode="decimal" placeholder="0">
+          <span class="sp-price-lbl">ล่าง</span><input class="sp-price-inp" id="sg-bot-${gi}" type="text" inputmode="decimal" placeholder="0">
+          <button class="sp-apply-btn" onclick="applyGroup(${gi})">ใส่ทั้งกลุ่ม</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleGroup(gi){
+  const el=$('sg-nums-'+gi);
+  el.style.display=el.style.display==='none'?'flex':'none';
+  el.style.flexWrap='wrap';
+}
+
+function chipClick(n, gi){
+  $('fn').value=n;
+  const top=$('sg-top-'+gi).value||'';
+  const bot=$('sg-bot-'+gi).value||'';
+  if(top) $('ft').value=top;
+  if(bot) $('fb').value=bot;
+  closeSpecial();
+  setTimeout(()=>{ if(!top) $('ft').focus(); else if(!bot) $('fb').focus(); else doAdd(); },100);
+}
+
+function applyGroup(gi){
+  const groups=getSpecialGroups();
+  const g=groups[gi];
+  const top=parseFloat($('sg-top-'+gi).value)||0;
+  const bot=parseFloat($('sg-bot-'+gi).value)||0;
+  if(!top&&!bot){alert('กรุณากรอกราคาบน หรือ ล่าง');return;}
+  const c=cfg();
+  let count=0;
+  g.nums.forEach(n=>{
+    const key=n.padStart(c.digits,'0');
+    if(!D[key]) D[key]={top:0,bot:0};
+    D[key].top=Math.max(0,(D[key].top||0)+top);
+    D[key].bot=Math.max(0,(D[key].bot||0)+bot);
+    count++;
+  });
+  sv(); build(); calcSum();
+  closeSpecial();
+  alert(`ใส่ ${count} เลข เสร็จแล้ว`);
+}
+
+function deleteGroup(gi){
+  if(!confirm('ลบกลุ่มนี้?')) return;
+  const groups=getSpecialGroups();
+  groups.splice(gi,1);
+  saveSpecialGroups(groups);
+  renderSpecialList();
+}
+
+let permNums=[];
+
+function genPerm(){
+  const val=$('sp-perm-num').value.trim();
+  if(!/^\d{3}$/.test(val)){alert('กรุณาป้อนเลข 3 หลัก');return;}
+  const a=val[0],b=val[1],c=val[2];
+  // all 2-digit combos from 3 digits
+  const pairs=[a+b,b+a,a+c,c+a,b+c,c+b];
+  permNums=[...new Set(pairs)]; // remove duplicates (e.g. 111 -> only 1 combo)
+  const chips=$('sp-perm-chips');
+  chips.innerHTML=permNums.map(n=>`<span class="sp-num-chip" onclick="permChipClick('${n}')">${n}</span>`).join('');
+  $('sp-perm-price').style.display='flex';
+}
+
+function permChipClick(n){
+  $('fn').value=n;
+  const top=$('sp-perm-top').value||'';
+  const bot=$('sp-perm-bot').value||'';
+  if(top) $('ft').value=top;
+  if(bot) $('fb').value=bot;
+  closeSpecial();
+  setTimeout(()=>{ if(!top) $('ft').focus(); else if(!bot) $('fb').focus(); else doAdd(); },100);
+}
+
+function applyPerm(){
+  if(!permNums.length){alert('กรุณาสร้างเลขก่อน');return;}
+  const top=parseFloat($('sp-perm-top').value)||0;
+  const bot=parseFloat($('sp-perm-bot').value)||0;
+  if(!top&&!bot){alert('กรุณากรอกราคาบน หรือ ล่าง');return;}
+  const c=cfg();
+  permNums.forEach(n=>{
+    const key=n.padStart(c.digits,'0');
+    if(!D[key]) D[key]={top:0,bot:0};
+    D[key].top=Math.max(0,(D[key].top||0)+top);
+    D[key].bot=Math.max(0,(D[key].bot||0)+bot);
+  });
+  sv(); build(); calcSum();
+  closeSpecial();
+  alert(`ใส่ ${permNums.length} เลข เสร็จแล้ว`);
+}
+
+function resetSpecialGroups(){
+  if(!confirm('คืนค่ากลุ่มเริ่มต้น? กลุ่มที่สร้างเองจะถูกลบทั้งหมด')) return;
+  localStorage.removeItem('h_special_groups');
+  renderSpecialList();
+}
+
+function saveSpecialGroup(){
+  const name=$('sp-name').value.trim();
+  const raw=$('sp-nums').value.trim();
+  if(!name){alert('กรุณาใส่ชื่อกลุ่ม');return;}
+  if(!raw){alert('กรุณาใส่เลข');return;}
+  const nums=[...new Set(raw.split(/[,\n\s]+/).map(s=>s.trim().padStart(2,'0')).filter(s=>/^\d{2}$/.test(s)))];
+  if(!nums.length){alert('ไม่พบเลขที่ถูกต้อง');return;}
+  const groups=getSpecialGroups();
+  groups.push({id:'g_custom_'+Date.now(), name, nums});
+  saveSpecialGroups(groups);
+  $('sp-name').value=''; $('sp-nums').value='';
+  renderSpecialList();
+  alert(`บันทึกกลุ่ม "${name}" (${nums.length} เลข) แล้ว`);
+}
+
+
+// Create special popup at document.body level to avoid transform stacking context
+(function(){
+  const ov = document.createElement('div');
+  ov.className = 'sp-ov'; ov.id = 'sp-ov';
+  ov.onclick = closeSpecial;
+  document.body.appendChild(ov);
+
+  const panel = document.createElement('div');
+  panel.className = 'sp-panel'; panel.id = 'sp-panel';
+  panel.innerHTML = `
+  <div class="sp-head">
+    <span>✨ กลุ่มเลขพิเศษ</span>
+    <button class="sp-close" onclick="closeSpecial()">✕</button>
+  </div>
+  <div class="sp-scroll" id="sp-scroll">
+  <div class="sp-list" id="sp-list"></div>
+  <div class="sp-perm-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="sp-add-title" style="margin:0">🔀 สลับเลข 3 ตัว → 6 เลข 2 หลัก</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+      <input class="sp-inp" id="sp-perm-num" placeholder="ป้อนเลข 3 ตัว เช่น 123" maxlength="3" inputmode="numeric" style="margin:0;flex:1" onkeydown="if(event.key==='Delete'){this.value='';$('sp-perm-chips').innerHTML='';$('sp-perm-price').style.display='none';event.preventDefault()}"><button class="sp-k-del" onclick="$('sp-perm-num').value='';$('sp-perm-chips').innerHTML='';$('sp-perm-price').style.display='none'">DEL</button>
+<button onclick="genPerm()" style="background:#0d7a5f;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">สร้าง</button>
+    </div>
+    <div class="sp-nums-wrap" id="sp-perm-chips" style="min-height:36px;background:#f9f9f9;border-radius:8px;border:1px dashed #ccc;padding:8px"></div>
+    <div class="sp-price-row" id="sp-perm-price" style="display:none;margin-top:6px;padding:0">
+      <span class="sp-price-lbl">บน</span><input class="sp-price-inp" id="sp-perm-top" type="text" inputmode="decimal" placeholder="0" onkeydown="if(event.key==='Delete'){this.value='';event.preventDefault()}else if(event.key==='Enter'||event.key==='Go'){event.preventDefault();$('sp-perm-bot').focus()}" enterkeyhint="next"><button class="sp-k-del" onclick="$('sp-perm-top').value=''">DEL</button>
+      <span class="sp-price-lbl">ล่าง</span><input class="sp-price-inp" id="sp-perm-bot" type="text" inputmode="decimal" placeholder="0" onkeydown="if(event.key==='Delete'){this.value='';event.preventDefault()}else if(event.key==='Enter'||event.key==='Go'){event.preventDefault();applyPerm()}" enterkeyhint="done"><button class="sp-k-del" onclick="$('sp-perm-bot').value=''">DEL</button>
+      <button class="sp-apply-btn" onclick="applyPerm()">ใส่ทั้งหมด</button>
+    </div>
+  </div>
+  <div class="sp-add-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="sp-add-title" style="margin:0">➕ เพิ่มกลุ่มใหม่</div><button onclick="resetSpecialGroups()" style="font-size:11px;background:none;border:1px solid #aaa;border-radius:6px;padding:3px 8px;color:#666;cursor:pointer">↺ คืนค่าเริ่มต้น</button></div>
+    <input class="sp-inp" id="sp-name" placeholder="ชื่อกลุ่ม เช่น เลขเบิ้ล">
+    <textarea class="sp-inp sp-ta" id="sp-nums" placeholder="เลข คั่นด้วย , หรือ Enter เช่น 00,11,22"></textarea>
+    <button class="sp-save-btn" onclick="saveSpecialGroup()">บันทึกกลุ่ม</button>
+  </div>
+  </div>
+`;
+  document.body.appendChild(panel);
+})();
+
+</script>
+
+<div class="slip-ov" id="slip-ov">
+  <div class="slip-box" id="slip-box">
+    <div class="slip-head">
+      <h2 id="slip-title">🎫Slip</h2>
+      <p id="slip-date"></p>
+    </div>
+    <hr class="slip-divider">
+    <div id="slip-body"></div>
+    <hr class="slip-divider">
+    <div class="slip-total" id="slip-total"></div>
+    <div class="slip-btns">
+      <button class="slip-btn close" onclick="closeSlip()">✕ ปิด</button>
+      <button class="slip-btn print" onclick="window.print()">🖨️ พิมพ์</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
