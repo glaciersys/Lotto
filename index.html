@@ -1,17 +1,9 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>2 ตัว</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0d7a5f">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="2 ตัว">
-<meta name="mobile-web-app-capable" content="yes">
+<title>หวย 2 ตัว</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}body{position:relative}
@@ -198,7 +190,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0eb;color:#1a1a1a;display:f
 <body>
 
 <div class="topbar">
-  <div class="topbar-title" id="appTitle">🎫 2 ตัว</div>
+  <div class="topbar-title" id="appTitle">🎫 หวย 2 ตัว</div>
   <div class="topbar-actions">
     <button class="tbtn" onclick="doPrint()">🖨️ลาว</button>
     <button class="tbtn" onclick="doPrintThai()">🇹🇭 ไทย</button>
@@ -268,8 +260,8 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0eb;color:#1a1a1a;display:f
 const $ = id => document.getElementById(id);
 
 const LBL = {
-  '2': {title:'2 ตัว', top:'บน', bot:'ล่าง', topFull:'2 ตัวบน', botFull:'2 ตัวล่าง', digits:2, perPanel:25, rrt:70, rrb:70, slipTitle:' 2 ตัว', phT:'45', phB:'72'},
-  '3': {title:'3 ตัว', top:'เต็ง', bot:'โต๊ด', topFull:'3 ตัวเต็ง', botFull:'3 ตัวโต๊ด', digits:3, perPanel:250, rrt:900, rrb:150, slipTitle:' 3 ตัว', phT:'123', phB:'456'}
+  '2': {title:'หวย 2 ตัว', top:'บน', bot:'ล่าง', topFull:'2 ตัวบน', botFull:'2 ตัวล่าง', digits:2, perPanel:25, rrt:70, rrb:70, slipTitle:'ใบโพยหวย 2 ตัว', phT:'45', phB:'72'},
+  '3': {title:'หวย 3 ตัว', top:'เต็ง', bot:'โต๊ด', topFull:'3 ตัวเต็ง', botFull:'3 ตัวโต๊ด', digits:3, perPanel:250, rrt:900, rrb:150, slipTitle:'ใบโพยหวย 3 ตัว', phT:'123', phB:'456'}
 };
 
 let MODE = localStorage.getItem('h_mode') || '2';
@@ -618,10 +610,7 @@ function doPrint(){
   const grand3=grandByMode['3']||0, grand2=grandByMode['2']||0, grand=grand3+grand2;
   const g3str=grand3>0?grand3.toLocaleString():'-';
   const g2str=grand2>0?grand2.toLocaleString():'-';
-  $('#slip-title').innerHTML = '<img src="https://flagcdn.com/w40/la.png" style="vertical-align:middle; height:20px; margin-right:5px;"> Slip ลาว';
-
-
-//  $('slip-title').textContent='🎫 Slip ลาว';
+  $('slip-title').textContent='🎫 Slip ลาว';
   $('slip-date').textContent='วันที่ '+new Date().toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});
   $('slip-body').innerHTML=body;
   $('slip-total').innerHTML=`<table>
@@ -745,7 +734,7 @@ function getSpecialGroups(){
 function saveSpecialGroups(groups){ localStorage.setItem('h_special_groups', JSON.stringify(groups)); }
 
 function showSpecial(){
-  if(MODE!=='2'){alert('กลุ่มเลขพิเศษใช้ได้เฉพาะ 2 ตัว');return;}
+  if(MODE!=='2'){alert('กลุ่มเลขพิเศษใช้ได้เฉพาะหวย 2 ตัว');return;}
   renderSpecialList();
   $('sp-ov').classList.add('on');
   $('sp-panel').classList.add('on');
