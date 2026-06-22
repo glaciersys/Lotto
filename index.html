@@ -308,7 +308,7 @@ let currentBuyer = localStorage.getItem('h_current_buyer');
 if(!BUYERS || !BUYERS.length){
   // Migrate legacy single-buyer data (pre-buyer-list version) into a default buyer
   const id='b'+Date.now();
-  BUYERS=[{id, name:'ผู้ซื้อ 1'}];
+  BUYERS=[{id, name:'หน้าร้าน'}];
   ['2','3'].forEach(m=>{
     const d=localStorage.getItem('h'+m+'d'); if(d!==null) localStorage.setItem(dataKey(m,id), d);
     const e=localStorage.getItem('h'+m+'e'); if(e!==null) localStorage.setItem(entryKey(m,id), e);
