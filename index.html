@@ -1,9 +1,17 @@
-◌ั<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>หวย 2 ตัว</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d7a5f">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="หวย 2 ตัว">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}body{position:relative}
@@ -19,6 +27,19 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0eb;color:#1a1a1a;display:f
 .modebar{display:flex;background:#0a6650;flex-shrink:0;padding:6px 8px;gap:6px}
 .mtab{flex:1;text-align:center;padding:6px 0;border-radius:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,.65);background:rgba(255,255,255,.08);cursor:pointer;user-select:none}
 .mtab.on{background:#fff;color:#0d7a5f}
+
+.buyerbar{display:flex;align-items:center;gap:6px;background:#0a6650;padding:6px 8px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.12)}
+.buyer-scroll{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.buyer-scroll::-webkit-scrollbar{display:none}
+.buyer-chip{flex-shrink:0;background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);padding:6px 10px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;user-select:none}
+.buyer-chip.on{background:#fff;color:#0d7a5f}
+.buyer-chip.all{background:rgba(26,86,219,.3);color:#dfe9ff;flex-shrink:0}
+.buyer-chip.all.on{background:#1a56db;color:#fff}
+.buyer-del{opacity:.55;font-size:10px}
+.buyer-chip.on .buyer-del{opacity:.4}
+.buyer-add-btn{flex-shrink:0;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:20px;padding:6px 11px;font-size:13px;font-weight:700;cursor:pointer}
+
+.allbar{display:none;background:#eaf0ff;color:#1a56db;font-size:11px;font-weight:700;text-align:center;padding:6px 8px;flex-shrink:0;border-top:2px solid #1a56db}
 
 .summary{display:flex;background:#fff;border-bottom:1px solid #e0e0e0;flex-shrink:0;height:var(--h-sum)}
 .s-item{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;border-right:1px solid #f0f0ec}
@@ -196,9 +217,17 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0eb;color:#1a1a1a;display:f
     <button class="tbtn" onclick="doPrintThai()">🇹🇭 ไทย</button>
     <button class="tbtn" id="btnSpecial" onclick="showSpecial()">✨ กลุ่ม</button>
     <button class="tbtn" onclick="showMod()">🏆 ตรวจผล</button>
-    <button class="tbtn red" onclick="clearAll()">🗑️</button>
+    <button class="tbtn red" id="btnClear" onclick="clearAll()">🗑️</button>
   </div>
 </div>
+
+<div class="buyerbar">
+  <div class="buyer-chip all" id="allChip" onclick="switchBuyer('ALL')">📊 รวม</div>
+  <div class="buyer-scroll" id="buyerScroll"></div>
+  <button class="buyer-add-btn" onclick="promptAddBuyer()">+ ผู้ซื้อ</button>
+</div>
+
+<div class="allbar" id="allbar">📊 หน้ารวมทุกผู้ซื้อ — ดูและพิมพ์ใบโพยได้เท่านั้น ป้อนเลขไม่ได้</div>
 
 <div class="modebar">
   <div class="mtab on" id="tab2" onclick="switchMode('2')">2 ตัว</div>
@@ -226,7 +255,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0eb;color:#1a1a1a;display:f
   </div>
 </div>
 
-<div class="ibar">
+<div class="ibar" id="ibar">
   <div class="log" id="log"><span class="log-e">รายการล่าสุด...</span></div>
   <div class="irow">
     <div class="ig" style="flex:1.1"><div class="il n">เลข</div><input class="inp fn" id="fn" type="text" inputmode="numeric" maxlength="2" placeholder="00"></div>
@@ -268,11 +297,122 @@ let MODE = localStorage.getItem('h_mode') || '2';
 let D = {}, E = {};
 const cfg = () => LBL[MODE];
 
-function loadData(){
-  D = JSON.parse(localStorage.getItem('h'+MODE+'d')||'{}');
-  E = JSON.parse(localStorage.getItem('h'+MODE+'e')||'[]');
+// ===== Buyers =====
+function dataKey(m,b){ return 'h'+m+'d_'+b; }
+function entryKey(m,b){ return 'h'+m+'e_'+b; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let BUYERS = JSON.parse(localStorage.getItem('h_buyers')||'null');
+let currentBuyer = localStorage.getItem('h_current_buyer');
+
+if(!BUYERS || !BUYERS.length){
+  // Migrate legacy single-buyer data (pre-buyer-list version) into a default buyer
+  const id='b'+Date.now();
+  BUYERS=[{id, name:'ผู้ซื้อ 1'}];
+  ['2','3'].forEach(m=>{
+    const d=localStorage.getItem('h'+m+'d'); if(d!==null) localStorage.setItem(dataKey(m,id), d);
+    const e=localStorage.getItem('h'+m+'e'); if(e!==null) localStorage.setItem(entryKey(m,id), e);
+  });
+  currentBuyer=id;
 }
-const sv = () => { localStorage.setItem('h'+MODE+'d',JSON.stringify(D)); localStorage.setItem('h'+MODE+'e',JSON.stringify(E)); };
+if(currentBuyer!=='ALL' && !BUYERS.find(b=>b.id===currentBuyer)){
+  currentBuyer = BUYERS.length ? BUYERS[0].id : 'ALL';
+}
+function saveBuyers(){ localStorage.setItem('h_buyers', JSON.stringify(BUYERS)); }
+function saveCurrentBuyer(){ localStorage.setItem('h_current_buyer', currentBuyer); }
+saveBuyers(); saveCurrentBuyer();
+
+function combineAll(m){
+  const out={};
+  BUYERS.forEach(b=>{
+    const bd=JSON.parse(localStorage.getItem(dataKey(m,b.id))||'{}');
+    for(const n in bd){
+      if(!out[n]) out[n]={top:0,bot:0};
+      out[n].top+=bd[n].top||0;
+      out[n].bot+=bd[n].bot||0;
+    }
+  });
+  return out;
+}
+
+function loadData(){
+  if(currentBuyer==='ALL'){
+    D = combineAll(MODE);
+    E = [];
+  } else {
+    D = JSON.parse(localStorage.getItem(dataKey(MODE,currentBuyer))||'{}');
+    E = JSON.parse(localStorage.getItem(entryKey(MODE,currentBuyer))||'[]');
+  }
+}
+const sv = () => {
+  if(currentBuyer==='ALL') return; // read-only aggregate view, nothing to save
+  localStorage.setItem(dataKey(MODE,currentBuyer),JSON.stringify(D));
+  localStorage.setItem(entryKey(MODE,currentBuyer),JSON.stringify(E));
+};
+
+function renderBuyerBar(){
+  $('buyerScroll').innerHTML = BUYERS.map(b=>
+    `<div class="buyer-chip${b.id===currentBuyer?' on':''}" onclick="switchBuyer('${b.id}')">${escapeHtml(b.name)}<span class="buyer-del" onclick="event.stopPropagation();delBuyer('${b.id}')">✕</span></div>`
+  ).join('');
+  $('allChip').classList.toggle('on', currentBuyer==='ALL');
+}
+
+function updateAllViewUI(){
+  const isAll = currentBuyer==='ALL';
+  $('ibar').style.display = isAll ? 'none' : '';
+  $('allbar').style.display = isAll ? '' : 'none';
+  $('btnSpecial').style.display = (!isAll && MODE==='2') ? '' : 'none';
+  $('btnClear').style.display = isAll ? 'none' : '';
+}
+
+function promptAddBuyer(){
+  const name=prompt('ชื่อผู้ซื้อใหม่:');
+  if(!name||!name.trim())return;
+  const id='b'+Date.now();
+  BUYERS.push({id, name:name.trim()});
+  saveBuyers();
+  switchBuyer(id);
+}
+
+function delBuyer(id){
+  if(BUYERS.length<=1){alert('ต้องมีผู้ซื้ออย่างน้อย 1 คน');return;}
+  const b=BUYERS.find(x=>x.id===id);
+  if(!confirm(`ลบ "${b?b.name:''}" และข้อมูลทั้งหมดของผู้ซื้อนี้?`))return;
+  BUYERS=BUYERS.filter(x=>x.id!==id);
+  saveBuyers();
+  ['2','3'].forEach(m=>{
+    localStorage.removeItem(dataKey(m,id));
+    localStorage.removeItem(entryKey(m,id));
+  });
+  if(currentBuyer===id){
+    currentBuyer=BUYERS[0].id;
+    saveCurrentBuyer();
+    loadData(); applyLabels(); build(); renderLog(); goPanel(0); updateAllViewUI();
+  }
+  renderBuyerBar();
+}
+
+function buyerLabel(){
+  if(currentBuyer==='ALL') return '📊 รวมทุกผู้ซื้อ';
+  const b=BUYERS.find(x=>x.id===currentBuyer);
+  return b ? '👤 '+b.name : '';
+}
+
+function switchBuyer(id){
+  if(id===currentBuyer)return;
+  currentBuyer=id;
+  saveCurrentBuyer();
+  closeSpecial();
+  closeMod();
+  loadData();
+  applyLabels();
+  build();
+  renderLog();
+  goPanel(0);
+  renderBuyerBar();
+  updateAllViewUI();
+  if(currentBuyer!=='ALL') setTimeout(()=>$('fn').focus(),50);
+}
 
 const isMob = () => window.innerWidth < 600;
 let cur = 0;
@@ -374,6 +514,7 @@ function delActiveField(){
 }
 
 function doAdd(){
+  if(currentBuyer==='ALL'){alert('หน้ารวมดูข้อมูลได้เท่านั้น กรุณาเลือกผู้ซื้อก่อนป้อนเลข');return;}
   const c=cfg();
   const raw=$('fn').value.trim();
   const n=raw.padStart(c.digits,'0');
@@ -432,6 +573,7 @@ function delE(idx){
 }
 
 function clearAll(){
+  if(currentBuyer==='ALL'){alert('ไม่สามารถล้างข้อมูลในหน้ารวมได้');return;}
   if(!confirm('ล้างข้อมูลทั้งหมด?'))return;
   D={};E=[];sv();build();renderLog();
 }
@@ -579,7 +721,8 @@ function doCheck(){
 function getData(m){
   // Always flush current D to localStorage first so data is consistent
   sv();
-  return JSON.parse(localStorage.getItem('h'+m+'d')||'{}');
+  if(currentBuyer==='ALL') return combineAll(m);
+  return JSON.parse(localStorage.getItem(dataKey(m,currentBuyer))||'{}');
 }
 
 function doPrint(){
@@ -611,6 +754,7 @@ function doPrint(){
   const g3str=grand3>0?grand3.toLocaleString():'-';
   const g2str=grand2>0?grand2.toLocaleString():'-';
   $('slip-title').textContent=' 🇱🇦 Slip ลาว';
+  $('slip-buyer').textContent=buyerLabel();
   $('slip-date').textContent='วันที่ '+new Date().toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});
   $('slip-body').innerHTML=body;
   $('slip-total').innerHTML=`<table>
@@ -661,6 +805,7 @@ function doPrintThai(){
   const g3str=grand3>0?grand3.toLocaleString():'-';
   const g2str=grand2>0?grand2.toLocaleString():'-';
   $('slip-title').textContent='🇹🇭 Slip ไทย';
+  $('slip-buyer').textContent=buyerLabel();
   $('slip-date').textContent='วันที่ '+new Date().toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});
   $('slip-body').innerHTML=body;
   $('slip-total').innerHTML=`<table>
@@ -696,14 +841,14 @@ function switchMode(m){
   localStorage.setItem('h_mode',MODE);
   $('tab2').classList.toggle('on',m==='2');
   $('tab3').classList.toggle('on',m==='3');
-  $('btnSpecial').style.display=m==='2'?'':'none';
   loadData();
   applyLabels();
   build();
   renderLog();
   goPanel(0);
   closeMod();
-  setTimeout(()=>$('fn').focus(),50);
+  updateAllViewUI();
+  if(currentBuyer!=='ALL') setTimeout(()=>$('fn').focus(),50);
 }
 
 loadData();
@@ -711,9 +856,9 @@ applyLabels();
 build(); renderLog();
 $('tab2').classList.toggle('on',MODE==='2');
 $('tab3').classList.toggle('on',MODE==='3');
-setTimeout(()=>$('fn').focus(),50);
-// Init special button visibility
-if($('btnSpecial')) $('btnSpecial').style.display=MODE==='2'?'':'none';
+renderBuyerBar();
+updateAllViewUI();
+if(currentBuyer!=='ALL') setTimeout(()=>$('fn').focus(),50);
 
 // ===== Special Groups =====
 const DEFAULT_GROUPS = [
@@ -734,6 +879,7 @@ function getSpecialGroups(){
 function saveSpecialGroups(groups){ localStorage.setItem('h_special_groups', JSON.stringify(groups)); }
 
 function showSpecial(){
+  if(currentBuyer==='ALL'){alert('กลุ่มเลขพิเศษใช้ไม่ได้ในหน้ารวม กรุณาเลือกผู้ซื้อก่อน');return;}
   if(MODE!=='2'){alert('กลุ่มเลขพิเศษใช้ได้เฉพาะหวย 2 ตัว');return;}
   renderSpecialList();
   $('sp-ov').classList.add('on');
@@ -940,6 +1086,7 @@ function saveSpecialGroup(){
   <div class="slip-box" id="slip-box">
     <div class="slip-head">
       <h2 id="slip-title">🎫Slip</h2>
+      <p id="slip-buyer" style="font-weight:700;color:#333;margin-top:2px"></p>
       <p id="slip-date"></p>
     </div>
     <hr class="slip-divider">
