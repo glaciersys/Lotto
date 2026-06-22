@@ -213,8 +213,8 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0eb;color:#1a1a1a;display:f
 <div class="topbar">
   <div class="topbar-title" id="appTitle">🎫 หวย 2 ตัว</div>
   <div class="topbar-actions">
-    <button class="tbtn" onclick="doPrint()">🖨️ลาว</button>
-    <button class="tbtn" onclick="doPrintThai()">🇹🇭 ไทย</button>
+    <button class="tbtn" onclick="doPrint()">🖨️<img src="https://flagcdn.com/w20/la.png" style="height:13px;vertical-align:middle;margin:0 2px">ลาว</button>
+    <button class="tbtn" onclick="doPrintThai()"><img src="https://flagcdn.com/w20/th.png" style="height:13px;vertical-align:middle;margin-right:3px">ไทย</button>
     <button class="tbtn" id="btnSpecial" onclick="showSpecial()">✨ กลุ่ม</button>
     <button class="tbtn" onclick="showMod()">🏆 ตรวจผล</button>
     <button class="tbtn red" id="btnClear" onclick="clearAll()">🗑️</button>
@@ -753,7 +753,7 @@ function doPrint(){
   const grand3=grandByMode['3']||0, grand2=grandByMode['2']||0, grand=grand3+grand2;
   const g3str=grand3>0?grand3.toLocaleString():'-';
   const g2str=grand2>0?grand2.toLocaleString():'-';
-  $('slip-title').textContent=' 🇱🇦 Slip ลาว';
+  $('slip-title').innerHTML='<img src="https://flagcdn.com/w20/la.png" style="height:16px;vertical-align:middle;margin-right:4px"> Slip ลาว';
   $('slip-buyer').textContent=buyerLabel();
   $('slip-date').textContent='วันที่ '+new Date().toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});
   $('slip-body').innerHTML=body;
@@ -804,7 +804,7 @@ function doPrintThai(){
   const grand3=grandByMode['3']||0, grand2=grandByMode['2']||0, grand=grand3+grand2;
   const g3str=grand3>0?grand3.toLocaleString():'-';
   const g2str=grand2>0?grand2.toLocaleString():'-';
-  $('slip-title').textContent='🇹🇭 Slip ไทย';
+  $('slip-title').innerHTML='<img src="https://flagcdn.com/w20/th.png" style="height:16px;vertical-align:middle;margin-right:4px"> Slip ไทย';
   $('slip-buyer').textContent=buyerLabel();
   $('slip-date').textContent='วันที่ '+new Date().toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});
   $('slip-body').innerHTML=body;
