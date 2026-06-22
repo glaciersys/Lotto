@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -618,7 +618,8 @@ function doPrint(){
   const grand3=grandByMode['3']||0, grand2=grandByMode['2']||0, grand=grand3+grand2;
   const g3str=grand3>0?grand3.toLocaleString():'-';
   const g2str=grand2>0?grand2.toLocaleString():'-';
-  $('slip-title').textContent='🎫 Slip ลาว';
+  $('slip-title').textContent='🇱🇦 Slip ลาว';
+//  $('slip-title').textContent='🎫 Slip ลาว';
   $('slip-date').textContent='วันที่ '+new Date().toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});
   $('slip-body').innerHTML=body;
   $('slip-total').innerHTML=`<table>
