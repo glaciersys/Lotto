@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>หวย 2 ตัว</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d7a5f">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="หวย 2 ตัว">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title" id="appTitle">🎫 หวย 2 ตัว</div>
+  <div class="topbar-actions">
+    <button class="tbtn" onclick="doPrint()">🖨️ลาว</button>
+    <button class="tbtn" onclick="doPrintThai()">🇹🇭 ไทย</button>
+    <button class="tbtn" id="btnSpecial" onclick="showSpecial()">✨ กลุ่ม</button>
+    <button class="tbtn" onclick="showMod()">🏆 ตรวจผล</button>
+    <button class="tbtn red" id="btnClear" onclick="clearAll()">🗑️</button>
+  </div>
+</div>
+
+<div class="buyerbar">
+  <div class="buyer-chip all" id="allChip" onclick="switchBuyer('ALL')">📊 รวม</div>
+  <div class="buyer-scroll" id="buyerScroll"></div>
+  <button class="buyer-add-btn" onclick="promptAddBuyer()">+ ผู้ซื้อ</button>
+</div>
+
+<div class="allbar" id="allbar">📊 หน้ารวมทุกผู้ซื้อ — ดูและพิมพ์ใบโพยได้เท่านั้น ป้อนเลขไม่ได้</div>
+
+<div class="modebar">
+  <div class="mtab on" id="tab2" onclick="switchMode('2')">2 ตัว</div>
+  <div class="mtab" id="tab3" onclick="switchMode('3')">3 ตัว</div>
+</div>
+
+<div class="summary">
+  <div class="s-item"><div class="s-lbl" id="lblTop">ยอดบน</div><div class="s-val g" id="st">0</div></div>
+  <div class="s-item"><div class="s-lbl" id="lblBot">ยอดล่าง</div><div class="s-val g" id="sb">0</div></div>
+  <div class="s-item"><div class="s-lbl">รวม</div><div class="s-val" id="ss">0</div></div>
+  <div class="s-item"><div class="s-lbl">เลข</div><div class="s-val" id="sc">0</div></div>
+</div>
+
+<div class="dots" id="dots">
+  <div class="dot on" id="d0"></div><div class="dot" id="d1"></div>
+  <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
+</div>
+
+<div class="panels-area" id="pa">
+  <div class="panels-inner" id="pi">
+    <div class="panel"><div class="th"><span class="th-n" id="thn0">00-24</span><span class="th-top">บน</span><span class="th-bot">ล่าง</span><span>รวม</span></div><div class="rows" id="r0"></div></div>
+    <div class="panel"><div class="th"><span class="th-n" id="thn1">25-49</span><span class="th-top">บน</span><span class="th-bot">ล่าง</span><span>รวม</span></div><div class="rows" id="r1"></div></div>
+    <div class="panel"><div class="th"><span class="th-n" id="thn2">50-74</span><span class="th-top">บน</span><span class="th-bot">ล่าง</span><span>รวม</span></div><div class="rows" id="r2"></div></div>
+    <div class="panel"><div class="th"><span class="th-n" id="thn3">75-99</span><span class="th-top">บน</span><span class="th-bot">ล่าง</span><span>รวม</span></div><div class="rows" id="r3"></div></div>
+  </div>
+</div>
+
+<div class="ibar" id="ibar">
+  <div class="log" id="log"><span class="log-e">รายการล่าสุด...</span></div>
+  <div class="irow">
+    <div class="ig" style="flex:1.1"><div class="il n">เลข</div><input class="inp fn" id="fn" type="text" inputmode="numeric" maxlength="2" placeholder="00"></div>
+    <div class="ig"><div class="il t" id="lblInpTop">บน (฿)</div><input class="inp ft" id="ft" type="text" inputmode="decimal" placeholder="0"></div>
+    <div class="ig"><div class="il b" id="lblInpBot">ล่าง (฿)</div><input class="inp fb" id="fb" type="text" inputmode="decimal" placeholder="0"></div>
+    <button class="bdel" id="bdel" onclick="delActiveField()">DEL</button>
+    <button class="badd" onclick="doAdd()">+</button>
+  </div>
+</div>
+
+<div class="ov" id="ov" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="mh"><div class="mt">🏆 ตรวจผลรางวัล</div><div style="display:flex;gap:8px;align-items:center"><button onclick="clearCheck()" style="background:rgba(180,50,50,.15);color:#c0392b;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-family:inherit;font-weight:700;cursor:pointer">🗑️ ล้าง</button><span class="mx" onclick="closeMod()">✕</span></div></div>
+    <div class="m2">
+      <div class="mf"><label>เลข 3 ตัว</label><input class="mi" id="res3" type="text" inputmode="numeric" maxlength="3" placeholder="123" oninput="updDerived()"></div>
+      <div class="mf"><label>เลขล่าง (2 ตัว)</label><input class="mi" id="res2b" type="text" inputmode="numeric" maxlength="2" placeholder="72"></div>
+    </div>
+    <div id="derived" style="font-size:11px;color:#888;margin:-6px 0 12px;line-height:1.7;min-height:14px"></div>
+    <div class="m2">
+      <div class="mf"><label>อัตราจ่ายเต็ง (x)</label><input class="mi" id="rrt3" type="number" inputmode="numeric" value="900"></div>
+      <div class="mf"><label>อัตราจ่ายโต๊ด (x)</label><input class="mi" id="rrb3" type="number" inputmode="numeric" value="150"></div>
+      <div class="mf"><label>อัตราจ่ายบน (x)</label><input class="mi" id="rrt2" type="number" inputmode="numeric" value="70"></div>
+      <div class="mf"><label>อัตราจ่ายล่าง (x)</label><input class="mi" id="rrb2" type="number" inputmode="numeric" value="70"></div>
+    </div>
+    <button class="mb" onclick="doCheck()">✅ ตรวจโพย</button>
+    <div id="ro" style="margin-top:14px"></div>
+  </div>
+</div>
+<script src="app.js"></script>
+
+<div class="slip-ov" id="slip-ov">
+  <div class="slip-box" id="slip-box">
+    <div class="slip-head">
+      <h2 id="slip-title">🎫Slip</h2>
+      <p id="slip-buyer" style="font-weight:700;color:#333;margin-top:2px"></p>
+      <p id="slip-date"></p>
+    </div>
+    <hr class="slip-divider">
+    <div id="slip-body"></div>
+    <hr class="slip-divider">
+    <div class="slip-total" id="slip-total"></div>
+    <div class="slip-btns">
+      <button class="slip-btn close" onclick="closeSlip()">✕ ปิด</button>
+      <button class="slip-btn print" onclick="window.print()">🖨️ พิมพ์</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
