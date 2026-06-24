@@ -19,8 +19,8 @@
 <div class="topbar">
   <div class="topbar-title" id="appTitle">🎫 หวย 2 ตัว</div>
   <div class="topbar-actions">
-    <button class="tbtn" onclick="doPrint()">🖨️ลาว</button>
-    <button class="tbtn" onclick="doPrintThai()">🇹🇭 ไทย</button>
+    <button class="tbtn" onclick="doPrint()"><img src="https://flagcdn.com/w20/la.png" style="height:13px;vertical-align:middle;margin-right:3px">ລາວ</button>
+    <button class="tbtn" onclick="doPrintThai()"><img src="https://flagcdn.com/w20/th.png" style="height:13px;vertical-align:middle;margin-right:3px">ไทย</button>
     <button class="tbtn" id="btnSpecial" onclick="showSpecial()">✨ กลุ่ม</button>
     <button class="tbtn" onclick="showMod()">🏆 ตรวจผล</button>
     <button class="tbtn red" id="btnClear" onclick="clearAll()">🗑️</button>
@@ -72,6 +72,7 @@
   </div>
 </div>
 
+<!-- Check Modal -->
 <div class="ov" id="ov" onclick="bgClose(event)">
   <div class="modal">
     <div class="mh"><div class="mt">🏆 ตรวจผลรางวัล</div><div style="display:flex;gap:8px;align-items:center"><button onclick="clearCheck()" style="background:rgba(180,50,50,.15);color:#c0392b;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-family:inherit;font-weight:700;cursor:pointer">🗑️ ล้าง</button><span class="mx" onclick="closeMod()">✕</span></div></div>
@@ -90,8 +91,8 @@
     <div id="ro" style="margin-top:14px"></div>
   </div>
 </div>
-<script src="app.js"></script>
 
+<!-- Slip Modal -->
 <div class="slip-ov" id="slip-ov">
   <div class="slip-box" id="slip-box">
     <div class="slip-head">
@@ -110,5 +111,7 @@
   </div>
 </div>
 
+<script src="app.js"></script>
+<script src="special.js"></script>
 </body>
 </html>
