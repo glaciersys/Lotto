@@ -1,4 +1,4 @@
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}  
 html,body{height:100%;overflow:hidden}body{position:relative}
 body{font-family:'Sarabun',sans-serif;background:#f0f0eb;color:#1a1a1a;display:flex;flex-direction:column}
 
