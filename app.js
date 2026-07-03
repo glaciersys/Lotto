@@ -605,19 +605,24 @@ updateAllViewUI();
 if(currentBuyer!=='ALL') setTimeout(()=>$('fn').focus(),50);
 
 // ===== Auto Update Detection =====
-// เช็ค header Last-Modified ของ index.html เป็นระยะ ถ้าเปลี่ยน = มีการอัปเดตไฟล์ใหม่บน GitHub
-// ไม่ต้อง bump เลข version เอง เพราะดึงค่าจาก server โดยตรงทุกครั้ง
+// เช็ค header Last-Modified ของไฟล์หลักทั้งหมด (ไม่ใช่แค่ index.html)
+// เพราะ deploy ส่วนใหญ่มักแก้แค่ app.js/style.css โดยไม่แตะ index.html เลย
+// ถ้าเช็คแค่ index.html ไฟล์เดียว จะพลาดการแจ้งเตือนในกรณีนั้น
 let pageTag = null;
+const WATCH_FILES = ['./index.html', './app.js', './special.js', './style.css'];
 
-async function getPageTag(){
+async function getCombinedTag(){
   try{
-    const res = await fetch('./index.html', {cache:'no-store'});
-    return res.headers.get('last-modified') || res.headers.get('etag') || null;
+    const tags = await Promise.all(WATCH_FILES.map(async (url) => {
+      const res = await fetch(url, {cache:'no-store'});
+      return res.headers.get('last-modified') || res.headers.get('etag') || '';
+    }));
+    return tags.join('|');
   }catch(e){ return null; }
 }
 
 async function initVersionCheck(){
-  pageTag = await getPageTag();
+  pageTag = await getCombinedTag();
   setInterval(checkForUpdate, 5*60*1000); // เช็คทุก 5 นาที
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState==='visible') checkForUpdate();
@@ -625,7 +630,7 @@ async function initVersionCheck(){
 }
 
 async function checkForUpdate(){
-  const tag = await getPageTag();
+  const tag = await getCombinedTag();
   if(tag && pageTag && tag!==pageTag) showUpdateBanner();
 }
 
