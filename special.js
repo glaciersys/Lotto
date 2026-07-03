@@ -1,4 +1,4 @@
-// ===== Special Groups =====  
+// ===== Special Groups =====
 const DEFAULT_GROUPS = [
   {id:'g_double', name:'เลขเบิ้ล', nums:['00','11','22','33','44','55','66','77','88','99']},
   {id:'g_near1',  name:'เลขติด 1', nums:['01','10','12','21','23','32','34','43','45','54','56','65','67','76','78','87','89','98']},
@@ -23,6 +23,7 @@ function showSpecial(){
   $('sp-ov').classList.add('on');
   $('sp-panel').classList.add('on');
   spFocusField(null);
+  openModal('special');
 }
 
 let spActiveField=null;
@@ -43,6 +44,7 @@ function spKey(v){
 function closeSpecial(){
   $('sp-ov').classList.remove('on');
   $('sp-panel').classList.remove('on');
+  closeModal();
 }
 
 function renderSpecialList(){
