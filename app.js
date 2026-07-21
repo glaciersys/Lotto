@@ -287,10 +287,12 @@ function delE(key){
 
 function clearAll(){
   if(currentBuyer==='ALL'){alert('ไม่สามารถล้างข้อมูลในหน้ารวมได้');return;}
-  if(!confirm('ล้างข้อมูลทั้งหมด?'))return;
+  if(!confirm('ล้างข้อมูลทั้งหมด (ทั้งเลข 2 ตัว และ 3 ตัว) ของผู้ซื้อนี้?'))return;
   const updates={};
-  updates[`data/${MODE}/${currentBuyer}`]=null;
-  updates[`entries/${MODE}/${currentBuyer}`]=null;
+  ['2','3'].forEach(m=>{
+    updates[`data/${m}/${currentBuyer}`]=null;
+    updates[`entries/${m}/${currentBuyer}`]=null;
+  });
   db.ref().update(updates);
 }
 
