@@ -342,6 +342,8 @@ $('fn').oninput=e=>{
 };
 
 document.addEventListener('keydown',function(e){
+  if(e.key==='F2'){e.preventDefault();switchMode('2');return;}
+  if(e.key==='F3'){e.preventDefault();switchMode('3');return;}
   if(e.key==='Escape'){
     if($('sp-ov').classList.contains('on')){closeSpecial();return;}
     if($('slip-ov').classList.contains('on')){closeSlip();return;}
