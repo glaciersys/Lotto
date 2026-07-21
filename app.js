@@ -7,37 +7,27 @@ const LBL = {
 };
 
 let MODE = localStorage.getItem('h_mode') || '2';
-let D = {}, E = {};
+let D = {}, E = [];
 const cfg = () => LBL[MODE];
 
-// ===== Buyers =====
-function dataKey(m,b){ return 'h'+m+'d_'+b; }
-function entryKey(m,b){ return 'h'+m+'e_'+b; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-let BUYERS = JSON.parse(localStorage.getItem('h_buyers')||'null');
-let currentBuyer = localStorage.getItem('h_current_buyer');
+// ===== Buyers (synced via Firebase) =====
+let BUYERS = [];
+let currentBuyer = localStorage.getItem('h_current_buyer') || null;
 
-if(!BUYERS || !BUYERS.length){
-  const id='b'+Date.now();
-  BUYERS=[{id, name:'หน้าร้าน'}];
-  ['2','3'].forEach(m=>{
-    const d=localStorage.getItem('h'+m+'d'); if(d!==null) localStorage.setItem(dataKey(m,id), d);
-    const e=localStorage.getItem('h'+m+'e'); if(e!==null) localStorage.setItem(entryKey(m,id), e);
-  });
-  currentBuyer=id;
-}
-if(currentBuyer!=='ALL' && !BUYERS.find(b=>b.id===currentBuyer)){
-  currentBuyer = BUYERS.length ? BUYERS[0].id : 'ALL';
-}
-function saveBuyers(){ localStorage.setItem('h_buyers', JSON.stringify(BUYERS)); }
-function saveCurrentBuyer(){ localStorage.setItem('h_current_buyer', currentBuyer); }
-saveBuyers(); saveCurrentBuyer();
+// ALL_DATA[mode][buyerId] = {num:{top,bot}}
+let ALL_DATA = {'2':{}, '3':{}};
+// ALL_ENTRIES[mode][buyerId] = {pushKey:{n,t,a,ts}}
+let ALL_ENTRIES = {'2':{}, '3':{}};
+
+function saveCurrentBuyer(){ if(currentBuyer) localStorage.setItem('h_current_buyer', currentBuyer); }
 
 function combineAll(m){
   const out={};
+  const modeData = ALL_DATA[m]||{};
   BUYERS.forEach(b=>{
-    const bd=JSON.parse(localStorage.getItem(dataKey(m,b.id))||'{}');
+    const bd = modeData[b.id]||{};
     for(const n in bd){
       if(!out[n]) out[n]={top:0,bot:0};
       out[n].top+=bd[n].top||0;
@@ -47,20 +37,16 @@ function combineAll(m){
   return out;
 }
 
-function loadData(){
+function loadLocalView(){
   if(currentBuyer==='ALL'){
     D = combineAll(MODE);
     E = [];
   } else {
-    D = JSON.parse(localStorage.getItem(dataKey(MODE,currentBuyer))||'{}');
-    E = JSON.parse(localStorage.getItem(entryKey(MODE,currentBuyer))||'[]');
+    D = (ALL_DATA[MODE] && ALL_DATA[MODE][currentBuyer]) || {};
+    const raw = (ALL_ENTRIES[MODE] && ALL_ENTRIES[MODE][currentBuyer]) || {};
+    E = Object.keys(raw).map(k=>({...raw[k], _key:k})).sort((a,b)=>(a.ts||0)-(b.ts||0));
   }
 }
-const sv = () => {
-  if(currentBuyer==='ALL') return;
-  localStorage.setItem(dataKey(MODE,currentBuyer),JSON.stringify(D));
-  localStorage.setItem(entryKey(MODE,currentBuyer),JSON.stringify(E));
-};
 
 function renderBuyerBar(){
   $('buyerScroll').innerHTML = BUYERS.map(b=>
@@ -80,28 +66,31 @@ function updateAllViewUI(){
 function promptAddBuyer(){
   const name=prompt('ชื่อผู้ซื้อใหม่:');
   if(!name||!name.trim())return;
-  const id='b'+Date.now();
-  BUYERS.push({id, name:name.trim()});
-  saveBuyers();
-  switchBuyer(id);
+  const ref = db.ref('buyers').push();
+  ref.set({name:name.trim()}).then(()=>{
+    switchBuyer(ref.key);
+  });
 }
 
 function delBuyer(id){
   if(BUYERS.length<=1){alert('ต้องมีผู้ซื้ออย่างน้อย 1 คน');return;}
   const b=BUYERS.find(x=>x.id===id);
   if(!confirm(`ลบ "${b?b.name:''}" และข้อมูลทั้งหมดของผู้ซื้อนี้?`))return;
-  BUYERS=BUYERS.filter(x=>x.id!==id);
-  saveBuyers();
+  const updates={};
+  updates['buyers/'+id]=null;
   ['2','3'].forEach(m=>{
-    localStorage.removeItem(dataKey(m,id));
-    localStorage.removeItem(entryKey(m,id));
+    updates['data/'+m+'/'+id]=null;
+    updates['entries/'+m+'/'+id]=null;
   });
-  if(currentBuyer===id){
-    currentBuyer=BUYERS[0].id;
-    saveCurrentBuyer();
-    loadData(); applyLabels(); build(); renderLog(); goPanel(0); updateAllViewUI();
-  }
-  renderBuyerBar();
+  db.ref().update(updates).then(()=>{
+    if(currentBuyer===id){
+      const remaining = BUYERS.filter(x=>x.id!==id);
+      currentBuyer = remaining.length ? remaining[0].id : null;
+      saveCurrentBuyer();
+      closeSpecial(); closeMod();
+      loadLocalView(); applyLabels(); build(); renderLog(); goPanel(0); updateAllViewUI();
+    }
+  });
 }
 
 function buyerLabel(){
@@ -116,7 +105,7 @@ function switchBuyer(id){
   saveCurrentBuyer();
   closeSpecial();
   closeMod();
-  loadData();
+  loadLocalView();
   applyLabels();
   build();
   renderLog();
@@ -240,54 +229,69 @@ function doAdd(){
   if(!raw){alert('กรุณากรอกหมายเลข');return;}
   if(!new RegExp('^\\d{1,'+c.digits+'}$').test(raw)||parseInt(raw)>maxVal){alert('หมายเลขต้องเป็น '+'0'.repeat(c.digits)+'-'+maxVal);return;}
   if(!taSub&&!baSub){alert('กรุณากรอกยอด'+c.top+'หรือ'+c.bot+'อย่างน้อย 1 ช่อง');return;}
-  if(!D[n])D[n]={top:0,bot:0};
-  if(taSub!==0){
-    if(taSub<0){
-      const deduct=Math.min(Math.abs(taSub), D[n].top||0);
-      if(deduct>0){D[n].top=Math.max(0,(D[n].top||0)-deduct);E.push({n,t:'top',a:-deduct});}
-    } else {
-      D[n].top=(D[n].top||0)+taSub;
-      E.push({n,t:'top',a:taSub});
-    }
+
+  const dataRef = db.ref(`data/${MODE}/${currentBuyer}/${n}`);
+  const entriesRef = db.ref(`entries/${MODE}/${currentBuyer}`);
+
+  function applyDelta(t, sub){
+    if(sub===0) return;
+    let appliedDelta = 0;
+    dataRef.transaction(cur=>{
+      cur = cur || {top:0, bot:0};
+      if(sub<0){
+        const deduct = Math.min(Math.abs(sub), cur[t]||0);
+        appliedDelta = -deduct;
+        cur[t] = Math.max(0,(cur[t]||0)-deduct);
+      } else {
+        appliedDelta = sub;
+        cur[t] = (cur[t]||0)+sub;
+      }
+      return cur;
+    }).then(result=>{
+      if(!result.committed || appliedDelta===0) return;
+      entriesRef.push({n, t, a:appliedDelta, ts: firebase.database.ServerValue.TIMESTAMP});
+    });
   }
-  if(baSub!==0){
-    if(baSub<0){
-      const deduct=Math.min(Math.abs(baSub), D[n].bot||0);
-      if(deduct>0){D[n].bot=Math.max(0,(D[n].bot||0)-deduct);E.push({n,t:'bot',a:-deduct});}
-    } else {
-      D[n].bot=(D[n].bot||0)+baSub;
-      E.push({n,t:'bot',a:baSub});
-    }
-  }
-  updRow(n); sv(); calcSum(); renderLog();
+  applyDelta('top', taSub);
+  applyDelta('bot', baSub);
+
   $('fn').value='';$('ft').value='';$('fb').value='';
   document.querySelectorAll('.row.hi').forEach(r=>r.classList.remove('hi'));
   $('fn').focus();
+  scrollTo2(n);
 }
 
 function renderLog(){
   const c=cfg();
   const el=$('log');
   if(!E.length){el.innerHTML='<span class="log-e">รายการล่าสุด...</span>';return;}
-  el.innerHTML=[...E].reverse().slice(0,30).map((e,i)=>{
+  el.innerHTML=[...E].reverse().slice(0,30).map(e=>{
     const neg=e.a<0;
     const cls=neg?'chip neg':`chip ${e.t==='bot'?'b':''}`;
     const sign=neg?'-':'';
-    return `<div class="${cls}">${e.n} ${e.t==='top'?c.top:c.bot} ${sign}฿${Math.abs(e.a)}<span class="xdel" onclick="delE(${E.length-1-i})">✕</span></div>`;
+    return `<div class="${cls}">${e.n} ${e.t==='top'?c.top:c.bot} ${sign}฿${Math.abs(e.a)}<span class="xdel" onclick="delE('${e._key}')">✕</span></div>`;
   }).join('');
 }
 
-function delE(idx){
-  const e=E[idx];if(!e||!D[e.n])return;
-  const k=e.t==='top'?'top':'bot';
-  D[e.n][k]=Math.max(0,(D[e.n][k]||0)-e.a);
-  E.splice(idx,1);sv();updRow(e.n);calcSum();renderLog();
+function delE(key){
+  if(currentBuyer==='ALL') return;
+  const raw = (ALL_ENTRIES[MODE] && ALL_ENTRIES[MODE][currentBuyer]) || {};
+  const e = raw[key];
+  if(!e) return;
+  db.ref(`data/${MODE}/${currentBuyer}/${e.n}/${e.t}`).transaction(cur=>{
+    return Math.max(0,(cur||0)-e.a);
+  }).then(()=>{
+    db.ref(`entries/${MODE}/${currentBuyer}/${key}`).remove();
+  });
 }
 
 function clearAll(){
   if(currentBuyer==='ALL'){alert('ไม่สามารถล้างข้อมูลในหน้ารวมได้');return;}
   if(!confirm('ล้างข้อมูลทั้งหมด?'))return;
-  D={};E=[];sv();build();renderLog();
+  const updates={};
+  updates[`data/${MODE}/${currentBuyer}`]=null;
+  updates[`entries/${MODE}/${currentBuyer}`]=null;
+  db.ref().update(updates);
 }
 
 // ===== Viewport Resize =====
@@ -355,38 +359,9 @@ document.addEventListener('keydown',function(e){
   }
 },true);
 
-// ===== Modal Back-Button Handling =====
-// เมื่อเปิด popup ใดๆ (ตรวจผล/กลุ่มเลข/สลิป) ให้ผลัก history state เพิ่ม 1 ระดับ
-// เวลากดปุ่ม Back บนมือถือ จะ trigger 'popstate' ให้ปิด popup แทนที่จะออกจากแอป
-let currentModal = null;
-let closingViaBack = false;
-
-function openModal(name){
-  currentModal = name;
-  history.pushState({modal:name}, '');
-}
-
-function closeModal(){
-  if(!currentModal) return;
-  currentModal = null;
-  if(!closingViaBack && history.state && history.state.modal){
-    history.back();
-  }
-}
-
-window.addEventListener('popstate', function(){
-  if(currentModal){
-    closingViaBack = true;
-    if(currentModal==='special') closeSpecial();
-    else if(currentModal==='check') closeMod();
-    else if(currentModal==='slip') closeSlip();
-    closingViaBack = false;
-  }
-});
-
 // ===== Check Modal =====
-function showMod(){$('ov').classList.add('on');setTimeout(()=>$('res3').focus(),50);openModal('check');}
-function closeMod(){$('ov').classList.remove('on');$('ro').innerHTML='';$('derived').innerHTML='';closeModal();}
+function showMod(){$('ov').classList.add('on');setTimeout(()=>$('res3').focus(),50);}
+function closeMod(){$('ov').classList.remove('on');$('ro').innerHTML='';$('derived').innerHTML='';}
 function bgClose(e){if(e.target===$('ov'))closeMod();}
 function clearCheck(){
   ['res3','res2b'].forEach(id=>{$(id).value='';});
@@ -459,9 +434,8 @@ function doCheck(){
 }
 
 function getData(m){
-  sv();
   if(currentBuyer==='ALL') return combineAll(m);
-  return JSON.parse(localStorage.getItem(dataKey(m,currentBuyer))||'{}');
+  return (ALL_DATA[m] && ALL_DATA[m][currentBuyer]) || {};
 }
 
 // ===== Slip / Print =====
@@ -508,9 +482,8 @@ function doPrint(){
       <td class="tc-sum">${grand.toLocaleString()} บ.</td>
     </tr></table>`;
   $('slip-ov').classList.add('on');
-  openModal('slip');
 }
-function closeSlip(){$('slip-ov').classList.remove('on');closeModal();}
+function closeSlip(){$('slip-ov').classList.remove('on');}
 
 function doPrintThai(){
   const THAI_MULT_2 = 12;
@@ -560,7 +533,6 @@ function doPrintThai(){
       <td class="tc-sum">${grand.toLocaleString()} บ.</td>
     </tr></table>`;
   $('slip-ov').classList.add('on');
-  openModal('slip');
 }
 
 // ===== Mode Switch =====
@@ -584,7 +556,7 @@ function switchMode(m){
   localStorage.setItem('h_mode',MODE);
   $('tab2').classList.toggle('on',m==='2');
   $('tab3').classList.toggle('on',m==='3');
-  loadData();
+  loadLocalView();
   applyLabels();
   build();
   renderLog();
@@ -594,59 +566,81 @@ function switchMode(m){
   if(currentBuyer!=='ALL') setTimeout(()=>$('fn').focus(),50);
 }
 
-// ===== Init =====
-loadData();
-applyLabels();
-build(); renderLog();
-$('tab2').classList.toggle('on',MODE==='2');
-$('tab3').classList.toggle('on',MODE==='3');
-renderBuyerBar();
-updateAllViewUI();
-if(currentBuyer!=='ALL') setTimeout(()=>$('fn').focus(),50);
-
-// ===== Auto Update Detection =====
-// เช็ค header Last-Modified ของไฟล์หลักทั้งหมด (ไม่ใช่แค่ index.html)
-// เพราะ deploy ส่วนใหญ่มักแก้แค่ app.js/style.css โดยไม่แตะ index.html เลย
-// ถ้าเช็คแค่ index.html ไฟล์เดียว จะพลาดการแจ้งเตือนในกรณีนั้น
-let pageTag = null;
-const WATCH_FILES = ['./index.html', './app.js', './special.js', './style.css'];
-
-async function getCombinedTag(){
-  try{
-    const tags = await Promise.all(WATCH_FILES.map(async (url) => {
-      const res = await fetch(url, {cache:'no-store'});
-      return res.headers.get('last-modified') || res.headers.get('etag') || '';
-    }));
-    return tags.join('|');
-  }catch(e){ return null; }
+// ===== One-time migration of old localStorage data into Firebase =====
+function migrateLocalToFirebase(){
+  if(localStorage.getItem('h_migrated')) return Promise.resolve();
+  const oldBuyers = JSON.parse(localStorage.getItem('h_buyers')||'null');
+  if(!oldBuyers || !oldBuyers.length){ localStorage.setItem('h_migrated','1'); return Promise.resolve(); }
+  return db.ref('buyers').once('value').then(snap=>{
+    if(snap.exists()){ localStorage.setItem('h_migrated','1'); return; }
+    const updates={};
+    oldBuyers.forEach(b=>{
+      updates['buyers/'+b.id] = {name:b.name};
+      ['2','3'].forEach(m=>{
+        const d = JSON.parse(localStorage.getItem('h'+m+'d_'+b.id)||'{}');
+        if(Object.keys(d).length) updates['data/'+m+'/'+b.id] = d;
+        const e = JSON.parse(localStorage.getItem('h'+m+'e_'+b.id)||'[]');
+        if(e.length){
+          const eObj={};
+          e.forEach((entry,i)=>{ eObj[db.ref().push().key] = {n:entry.n, t:entry.t, a:entry.a, ts: Date.now()+i}; });
+          updates['entries/'+m+'/'+b.id] = eObj;
+        }
+      });
+    });
+    return db.ref().update(updates);
+  }).then(()=>{ localStorage.setItem('h_migrated','1'); });
 }
 
-async function initVersionCheck(){
-  pageTag = await getCombinedTag();
-  setInterval(checkForUpdate, 5*60*1000); // เช็คทุก 5 นาที
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState==='visible') checkForUpdate();
+// ===== Firebase Realtime Listeners =====
+function attachDataListeners(){
+  ['2','3'].forEach(m=>{
+    db.ref('data/'+m).on('value', snap=>{
+      ALL_DATA[m] = snap.val() || {};
+      if(m===MODE){ loadLocalView(); build(); renderLog(); }
+    });
+    db.ref('entries/'+m).on('value', snap=>{
+      ALL_ENTRIES[m] = snap.val() || {};
+      if(m===MODE && currentBuyer!=='ALL'){ loadLocalView(); renderLog(); }
+    });
+  });
+  db.ref('buyers').on('value', snap=>{
+    const val = snap.val()||{};
+    const ids = Object.keys(val);
+    if(!ids.length){
+      const ref = db.ref('buyers').push();
+      ref.set({name:'หน้าร้าน'});
+      return;
+    }
+    BUYERS = ids.map(id=>({id, name: val[id].name}));
+    if(currentBuyer!=='ALL' && !BUYERS.find(b=>b.id===currentBuyer)){
+      currentBuyer = BUYERS[0].id;
+      saveCurrentBuyer();
+    }
+    renderBuyerBar();
+    updateAllViewUI();
+    loadLocalView(); applyLabels(); build(); renderLog();
   });
 }
 
-async function checkForUpdate(){
-  const tag = await getCombinedTag();
-  if(tag && pageTag && tag!==pageTag) showUpdateBanner();
-}
-
-function showUpdateBanner(){
-  if($('update-banner')) return;
-  const div=document.createElement('div');
-  div.id='update-banner';
-  div.innerHTML=`<span>🔄 มีเวอร์ชันใหม่ของแอป</span><button onclick="location.reload()">อัปเดตเลย</button>`;
-  document.body.appendChild(div);
-}
-
-initVersionCheck();
-
-// ===== Register Service Worker =====
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+function seedSpecialGroupsIfNeeded(){
+  db.ref('specialGroups').once('value').then(snap=>{
+    if(!snap.exists()){
+      const obj={};
+      DEFAULT_GROUPS.forEach(g=>{ obj[g.id]={name:g.name, nums:g.nums}; });
+      db.ref('specialGroups').set(obj);
+    }
   });
 }
+
+// ===== App Start (called by firebase-init.js after login) =====
+function startApp(){
+  applyLabels();
+  $('tab2').classList.toggle('on',MODE==='2');
+  $('tab3').classList.toggle('on',MODE==='3');
+  migrateLocalToFirebase().then(()=>{
+    seedSpecialGroupsIfNeeded();
+    attachDataListeners();
+    if(currentBuyer!=='ALL') setTimeout(()=>$('fn').focus(),50);
+  });
+}
+window.startApp = startApp;

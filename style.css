@@ -194,7 +194,12 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0eb;color:#1a1a1a;display:f
 .sp-k-del{background:#fee2e2;border:1px solid #fca5a5;color:#c0392b;font-size:12px;font-weight:700;border-radius:6px;padding:5px 8px;cursor:pointer;white-space:nowrap}
 .sp-k-del:active{background:#c0392b;color:#fff}
 
-/* Update Banner */
-#update-banner{position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#0d7a5f;color:#fff;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:700;box-shadow:0 -2px 12px rgba(0,0,0,.25);animation:slideUp .3s ease}
-#update-banner button{background:#fff;color:#0d7a5f;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+/* Password Gate */
+.gate-ov{position:fixed;inset:0;background:#0d7a5f;display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px}
+.gate-box{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:320px;text-align:center}
+.gate-title{font-size:16px;font-weight:700;color:#333;margin-bottom:16px}
+.gate-inp{width:100%;padding:12px;border-radius:10px;border:1.5px solid #e0e0e0;font-size:18px;text-align:center;margin-bottom:12px;font-family:inherit;-webkit-appearance:none}
+.gate-inp:focus{outline:none;border-color:#0d7a5f}
+.gate-btn{width:100%;background:#0d7a5f;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-family:inherit;font-weight:700;cursor:pointer}
+.gate-btn:active{background:#0a6650}
+.gate-err{color:#c0392b;font-size:12px;margin-top:10px;min-height:14px}

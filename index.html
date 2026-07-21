@@ -16,6 +16,15 @@
 </head>
 <body>
 
+<div class="gate-ov" id="gate-ov">
+  <div class="gate-box">
+    <div class="gate-title">🔒 กรุณาใส่รหัสผ่านร้าน</div>
+    <input class="gate-inp" id="gate-pw" type="password" inputmode="numeric" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter')gateSubmit()">
+    <button class="gate-btn" onclick="gateSubmit()">เข้าสู่ระบบ</button>
+    <div class="gate-err" id="gate-err"></div>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="topbar-title" id="appTitle">🎫 หวย 2 ตัว</div>
   <div class="topbar-actions">
@@ -111,6 +120,10 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-init.js"></script>
 <script src="app.js"></script>
 <script src="special.js"></script>
 </body>

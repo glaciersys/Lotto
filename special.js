@@ -9,12 +9,21 @@ const DEFAULT_GROUPS = [
   {id:'g_odd',    name:'เลขท้ายคี่', nums:Array.from({length:100},(_,i)=>String(i).padStart(2,'0')).filter(n=>parseInt(n[1])%2===1)},
 ];
 
+let SPECIAL_GROUPS_CACHE = null;
+
+db.ref('specialGroups').on('value', snap=>{
+  const val = snap.val();
+  if(!val){
+    SPECIAL_GROUPS_CACHE = DEFAULT_GROUPS.map(g=>({...g}));
+  } else {
+    SPECIAL_GROUPS_CACHE = Object.keys(val).map(k=>({id:k, name:val[k].name, nums:val[k].nums||[]}));
+  }
+  if($('sp-ov') && $('sp-ov').classList.contains('on')) renderSpecialList();
+});
+
 function getSpecialGroups(){
-  const saved = JSON.parse(localStorage.getItem('h_special_groups')||'null');
-  if(!saved) return DEFAULT_GROUPS.map(g=>({...g}));
-  return saved;
+  return SPECIAL_GROUPS_CACHE || DEFAULT_GROUPS.map(g=>({...g}));
 }
-function saveSpecialGroups(groups){ localStorage.setItem('h_special_groups', JSON.stringify(groups)); }
 
 function showSpecial(){
   if(currentBuyer==='ALL'){alert('กลุ่มเลขพิเศษใช้ไม่ได้ในหน้ารวม กรุณาเลือกผู้ซื้อก่อน');return;}
@@ -23,7 +32,6 @@ function showSpecial(){
   $('sp-ov').classList.add('on');
   $('sp-panel').classList.add('on');
   spFocusField(null);
-  openModal('special');
 }
 
 let spActiveField=null;
@@ -44,7 +52,6 @@ function spKey(v){
 function closeSpecial(){
   $('sp-ov').classList.remove('on');
   $('sp-panel').classList.remove('on');
-  closeModal();
 }
 
 function renderSpecialList(){
@@ -86,22 +93,28 @@ function chipClick(n, gi){
   setTimeout(()=>{ if(!top) $('ft').focus(); else if(!bot) $('fb').focus(); else doAdd(); },100);
 }
 
+function addAmountBulk(n, top, bot){
+  const c=cfg();
+  const key=n.padStart(c.digits,'0');
+  db.ref(`data/${MODE}/${currentBuyer}/${key}`).transaction(cur=>{
+    cur = cur || {top:0,bot:0};
+    cur.top = Math.max(0,(cur.top||0)+top);
+    cur.bot = Math.max(0,(cur.bot||0)+bot);
+    return cur;
+  });
+}
+
 function applyGroup(gi){
   const groups=getSpecialGroups();
   const g=groups[gi];
   const top=parseFloat($('sg-top-'+gi).value)||0;
   const bot=parseFloat($('sg-bot-'+gi).value)||0;
   if(!top&&!bot){alert('กรุณากรอกราคาบน หรือ ล่าง');return;}
-  const c=cfg();
   let count=0;
   g.nums.forEach(n=>{
-    const key=n.padStart(c.digits,'0');
-    if(!D[key]) D[key]={top:0,bot:0};
-    D[key].top=Math.max(0,(D[key].top||0)+top);
-    D[key].bot=Math.max(0,(D[key].bot||0)+bot);
+    addAmountBulk(n, top, bot);
     count++;
   });
-  sv(); build(); calcSum();
   closeSpecial();
   alert(`ใส่ ${count} เลข เสร็จแล้ว`);
 }
@@ -109,9 +122,8 @@ function applyGroup(gi){
 function deleteGroup(gi){
   if(!confirm('ลบกลุ่มนี้?')) return;
   const groups=getSpecialGroups();
-  groups.splice(gi,1);
-  saveSpecialGroups(groups);
-  renderSpecialList();
+  const g=groups[gi];
+  db.ref('specialGroups/'+g.id).remove().then(renderSpecialList);
 }
 
 let permNums=[];
@@ -142,22 +154,18 @@ function applyPerm(){
   const top=parseFloat($('sp-perm-top').value)||0;
   const bot=parseFloat($('sp-perm-bot').value)||0;
   if(!top&&!bot){alert('กรุณากรอกราคาบน หรือ ล่าง');return;}
-  const c=cfg();
   permNums.forEach(n=>{
-    const key=n.padStart(c.digits,'0');
-    if(!D[key]) D[key]={top:0,bot:0};
-    D[key].top=Math.max(0,(D[key].top||0)+top);
-    D[key].bot=Math.max(0,(D[key].bot||0)+bot);
+    addAmountBulk(n, top, bot);
   });
-  sv(); build(); calcSum();
   closeSpecial();
   alert(`ใส่ ${permNums.length} เลข เสร็จแล้ว`);
 }
 
 function resetSpecialGroups(){
   if(!confirm('คืนค่ากลุ่มเริ่มต้น? กลุ่มที่สร้างเองจะถูกลบทั้งหมด')) return;
-  localStorage.removeItem('h_special_groups');
-  renderSpecialList();
+  const obj={};
+  DEFAULT_GROUPS.forEach(g=>{ obj[g.id]={name:g.name, nums:g.nums}; });
+  db.ref('specialGroups').set(obj).then(renderSpecialList);
 }
 
 function saveSpecialGroup(){
@@ -167,12 +175,12 @@ function saveSpecialGroup(){
   if(!raw){alert('กรุณาใส่เลข');return;}
   const nums=[...new Set(raw.split(/[,\n\s]+/).map(s=>s.trim().padStart(2,'0')).filter(s=>/^\d{2}$/.test(s)))];
   if(!nums.length){alert('ไม่พบเลขที่ถูกต้อง');return;}
-  const groups=getSpecialGroups();
-  groups.push({id:'g_custom_'+Date.now(), name, nums});
-  saveSpecialGroups(groups);
-  $('sp-name').value=''; $('sp-nums').value='';
-  renderSpecialList();
-  alert(`บันทึกกลุ่ม "${name}" (${nums.length} เลข) แล้ว`);
+  const ref=db.ref('specialGroups').push();
+  ref.set({name, nums}).then(()=>{
+    $('sp-name').value=''; $('sp-nums').value='';
+    renderSpecialList();
+    alert(`บันทึกกลุ่ม "${name}" (${nums.length} เลข) แล้ว`);
+  });
 }
 
 // ===== Inject Special Popup DOM =====
