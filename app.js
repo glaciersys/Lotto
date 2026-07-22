@@ -399,10 +399,10 @@ function doCheck(){
   const r3=r3v?r3v.padStart(3,'0'):'';
   const r2b=r2bv?r2bv.padStart(2,'0'):'';
   const r2t=r3?r3.slice(-2):'';
-  const rrt3=parseFloat($('rrt3').value)||LBL['3'].rrt;
-  const rrb3=parseFloat($('rrb3').value)||LBL['3'].rrb;
-  const rrt2=parseFloat($('rrt2').value)||LBL['2'].rrt;
-  const rrb2=parseFloat($('rrb2').value)||LBL['2'].rrb;
+  const rrt3=parseRate('rrt3',LBL['3'].rrt);
+  const rrb3=parseRate('rrb3',LBL['3'].rrb);
+  const rrt2=parseRate('rrt2',LBL['2'].rrt);
+  const rrb2=parseRate('rrb2',LBL['2'].rrb);
 
   const D3=getData('3'), D2=getData('2');
   let pay=0,rec=0,html='';
@@ -443,12 +443,22 @@ function getData(m){
 }
 
 // ===== Payout Rates (synced via Firebase) =====
+function formatThousands(v){
+  const digits = String(v).replace(/[^\d]/g,'');
+  if(!digits) return '';
+  return parseInt(digits,10).toLocaleString();
+}
+function parseRate(id, fallback){
+  const v = (($(id)&&$(id).value)||'').replace(/,/g,'');
+  return parseFloat(v)||fallback;
+}
+
 function saveRates(){
   const rates = {
-    rrt3: parseFloat($('rrt3').value)||LBL['3'].rrt,
-    rrb3: parseFloat($('rrb3').value)||LBL['3'].rrb,
-    rrt2: parseFloat($('rrt2').value)||LBL['2'].rrt,
-    rrb2: parseFloat($('rrb2').value)||LBL['2'].rrb
+    rrt3: parseRate('rrt3',LBL['3'].rrt),
+    rrb3: parseRate('rrb3',LBL['3'].rrb),
+    rrt2: parseRate('rrt2',LBL['2'].rrt),
+    rrb2: parseRate('rrb2',LBL['2'].rrb)
   };
   db.ref('settings/rates').set(rates);
 }
@@ -457,8 +467,8 @@ function attachRatesListener(){
   db.ref('settings/rates').on('value', snap=>{
     const r = snap.val();
     if(!r) return;
-    if(document.activeElement.id!=='rrt3') $('rrt3').value = r.rrt3;
-    if(document.activeElement.id!=='rrb3') $('rrb3').value = r.rrb3;
+    if(document.activeElement.id!=='rrt3') $('rrt3').value = formatThousands(r.rrt3);
+    if(document.activeElement.id!=='rrb3') $('rrb3').value = formatThousands(r.rrb3);
     if(document.activeElement.id!=='rrt2') $('rrt2').value = r.rrt2;
     if(document.activeElement.id!=='rrb2') $('rrb2').value = r.rrb2;
   });

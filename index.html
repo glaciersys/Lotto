@@ -91,8 +91,8 @@
     </div>
     <div id="derived" style="font-size:11px;color:#888;margin:-6px 0 12px;line-height:1.7;min-height:14px"></div>
     <div class="m2">
-      <div class="mf"><label>อัตราจ่ายเต็ง (x)</label><input class="mi" id="rrt3" type="number" inputmode="numeric" value="900" onchange="saveRates()"></div>
-      <div class="mf"><label>อัตราจ่ายโต๊ด (x)</label><input class="mi" id="rrb3" type="number" inputmode="numeric" value="150" onchange="saveRates()"></div>
+      <div class="mf"><label>อัตราจ่ายเต็ง (x)</label><input class="mi" id="rrt3" type="text" inputmode="numeric" value="900" oninput="this.value=formatThousands(this.value)" onchange="saveRates()"></div>
+      <div class="mf"><label>อัตราจ่ายโต๊ด (x)</label><input class="mi" id="rrb3" type="text" inputmode="numeric" value="150" oninput="this.value=formatThousands(this.value)" onchange="saveRates()"></div>
       <div class="mf"><label>อัตราจ่ายบน (x)</label><input class="mi" id="rrt2" type="number" inputmode="numeric" value="70" onchange="saveRates()"></div>
       <div class="mf"><label>อัตราจ่ายล่าง (x)</label><input class="mi" id="rrb2" type="number" inputmode="numeric" value="70" onchange="saveRates()"></div>
     </div>
