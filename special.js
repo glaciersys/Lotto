@@ -31,6 +31,7 @@ function showSpecial(){
   renderSpecialList();
   $('sp-ov').classList.add('on');
   $('sp-panel').classList.add('on');
+  pushModalState();
   spFocusField(null);
 }
 
@@ -52,6 +53,7 @@ function spKey(v){
 function closeSpecial(){
   $('sp-ov').classList.remove('on');
   $('sp-panel').classList.remove('on');
+  popModalStateIfNeeded();
 }
 
 function renderSpecialList(){

@@ -363,9 +363,28 @@ document.addEventListener('keydown',function(e){
   }
 },true);
 
+// ===== Mobile Back Button → close popup instead of exiting app =====
+let modalHistoryPushed = false;
+function pushModalState(){
+  modalHistoryPushed = true;
+  history.pushState({modal:true}, '');
+}
+function popModalStateIfNeeded(){
+  if(modalHistoryPushed){
+    modalHistoryPushed = false;
+    history.back();
+  }
+}
+window.addEventListener('popstate', function(){
+  if($('slip-ov').classList.contains('on')) $('slip-ov').classList.remove('on');
+  if($('sp-ov') && $('sp-ov').classList.contains('on')){ $('sp-ov').classList.remove('on'); $('sp-panel').classList.remove('on'); }
+  if($('ov').classList.contains('on')){ $('ov').classList.remove('on'); $('ro').innerHTML=''; $('derived').innerHTML=''; }
+  modalHistoryPushed = false;
+});
+
 // ===== Check Modal =====
-function showMod(){$('ov').classList.add('on');setTimeout(()=>$('res3').focus(),50);}
-function closeMod(){$('ov').classList.remove('on');$('ro').innerHTML='';$('derived').innerHTML='';}
+function showMod(){$('ov').classList.add('on');pushModalState();setTimeout(()=>$('res3').focus(),50);}
+function closeMod(){$('ov').classList.remove('on');$('ro').innerHTML='';$('derived').innerHTML='';popModalStateIfNeeded();}
 function bgClose(e){if(e.target===$('ov'))closeMod();}
 function clearCheck(){
   ['res3','res2b'].forEach(id=>{$(id).value='';});
@@ -518,8 +537,9 @@ function doPrint(){
       <td class="tc-sum">${grand.toLocaleString()} บ.</td>
     </tr></table>`;
   $('slip-ov').classList.add('on');
+  pushModalState();
 }
-function closeSlip(){$('slip-ov').classList.remove('on');}
+function closeSlip(){$('slip-ov').classList.remove('on');popModalStateIfNeeded();}
 
 function doPrintThai(){
   const THAI_MULT_2 = 12;
@@ -569,6 +589,7 @@ function doPrintThai(){
       <td class="tc-sum">${grand.toLocaleString()} บ.</td>
     </tr></table>`;
   $('slip-ov').classList.add('on');
+  pushModalState();
 }
 
 // ===== Mode Switch =====
