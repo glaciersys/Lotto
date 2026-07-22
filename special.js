@@ -98,11 +98,17 @@ function chipClick(n, gi){
 function addAmountBulk(n, top, bot){
   const c=cfg();
   const key=n.padStart(c.digits,'0');
-  db.ref(`data/${MODE}/${currentBuyer}/${key}`).transaction(cur=>{
+  const dataRef = db.ref(`data/${MODE}/${currentBuyer}/${key}`);
+  const entriesRef = db.ref(`entries/${MODE}/${currentBuyer}`);
+  dataRef.transaction(cur=>{
     cur = cur || {top:0,bot:0};
     cur.top = Math.max(0,(cur.top||0)+top);
     cur.bot = Math.max(0,(cur.bot||0)+bot);
     return cur;
+  }).then(result=>{
+    if(!result.committed) return;
+    if(top) entriesRef.push({n:key, t:'top', a:top, ts: firebase.database.ServerValue.TIMESTAMP});
+    if(bot) entriesRef.push({n:key, t:'bot', a:bot, ts: firebase.database.ServerValue.TIMESTAMP});
   });
 }
 
