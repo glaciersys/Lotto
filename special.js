@@ -13,16 +13,12 @@ let SPECIAL_GROUPS_CACHE = null;
 
 db.ref('specialGroups').on('value', snap=>{
   const val = snap.val();
-  if(!val){
-    SPECIAL_GROUPS_CACHE = DEFAULT_GROUPS.map(g=>({...g}));
-  } else {
-    SPECIAL_GROUPS_CACHE = Object.keys(val).map(k=>({id:k, name:val[k].name, nums:val[k].nums||[]}));
-  }
+  SPECIAL_GROUPS_CACHE = val ? Object.keys(val).map(k=>({id:k, name:val[k].name, nums:val[k].nums||[]})) : [];
   if($('sp-ov') && $('sp-ov').classList.contains('on')) renderSpecialList();
 });
 
 function getSpecialGroups(){
-  return SPECIAL_GROUPS_CACHE || DEFAULT_GROUPS.map(g=>({...g}));
+  return SPECIAL_GROUPS_CACHE || [];
 }
 
 function showSpecial(){
