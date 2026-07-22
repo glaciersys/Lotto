@@ -668,7 +668,7 @@ function attachDataListeners(){
       ref.set({name:'หน้าร้าน'});
       return;
     }
-    BUYERS = ids.map(id=>({id, name: val[id].name}));
+    BUYERS = ids.map(id=>({id, name: val[id].name})).sort((a,b)=>a.name.localeCompare(b.name,'th'));
     if(currentBuyer!=='ALL' && !BUYERS.find(b=>b.id===currentBuyer)){
       currentBuyer = BUYERS[0].id;
       saveCurrentBuyer();
