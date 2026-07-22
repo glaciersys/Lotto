@@ -442,6 +442,28 @@ function getData(m){
   return (ALL_DATA[m] && ALL_DATA[m][currentBuyer]) || {};
 }
 
+// ===== Payout Rates (synced via Firebase) =====
+function saveRates(){
+  const rates = {
+    rrt3: parseFloat($('rrt3').value)||LBL['3'].rrt,
+    rrb3: parseFloat($('rrb3').value)||LBL['3'].rrb,
+    rrt2: parseFloat($('rrt2').value)||LBL['2'].rrt,
+    rrb2: parseFloat($('rrb2').value)||LBL['2'].rrb
+  };
+  db.ref('settings/rates').set(rates);
+}
+
+function attachRatesListener(){
+  db.ref('settings/rates').on('value', snap=>{
+    const r = snap.val();
+    if(!r) return;
+    if(document.activeElement.id!=='rrt3') $('rrt3').value = r.rrt3;
+    if(document.activeElement.id!=='rrb3') $('rrb3').value = r.rrb3;
+    if(document.activeElement.id!=='rrt2') $('rrt2').value = r.rrt2;
+    if(document.activeElement.id!=='rrb2') $('rrb2').value = r.rrb2;
+  });
+}
+
 // ===== Slip / Print =====
 function doPrint(){
   let body='', grandTop=0, grandBot=0, totalCount=0;
@@ -644,6 +666,7 @@ function startApp(){
   migrateLocalToFirebase().then(()=>{
     seedSpecialGroupsIfNeeded();
     attachDataListeners();
+    attachRatesListener();
     if(currentBuyer!=='ALL') setTimeout(()=>$('fn').focus(),50);
   });
 }
