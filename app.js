@@ -680,12 +680,14 @@ function attachDataListeners(){
 }
 
 function seedSpecialGroupsIfNeeded(){
-  db.ref('specialGroups').once('value').then(snap=>{
-    if(!snap.exists()){
-      const obj={};
-      DEFAULT_GROUPS.forEach(g=>{ obj[g.id]={name:g.name, nums:g.nums}; });
-      db.ref('specialGroups').set(obj);
-    }
+  db.ref('settings/specialGroupsSeeded').once('value').then(snap=>{
+    if(snap.exists()) return;
+    const obj={};
+    DEFAULT_GROUPS.forEach(g=>{ obj[g.id]={name:g.name, nums:g.nums}; });
+    const updates={};
+    updates['specialGroups']=obj;
+    updates['settings/specialGroupsSeeded']=true;
+    db.ref().update(updates);
   });
 }
 
